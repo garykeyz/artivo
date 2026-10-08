@@ -379,3 +379,22 @@ test("demo clock advances without mutating original scheduled start or server ti
   assert.equal(start, e.start);
   assert.equal(120000, Date.parse(e.call_time) - Date.parse(e.demo_clock_at));
 });
+test("presenter advances the complete operational cycle and actually pays invoice once", () => {
+  const f = fixture();
+  const eid = accepted(f);
+  for (let n = 0; n < 12; n++) f.call("admin", "event/" + eid + "/next", {});
+  const e = f.db.arti.events.find((e) => e.id === eid),
+    i = f.db.arti.invoices.find((i) => i.event_id === eid);
+  assert.equal("SETTLED", e.status);
+  assert.equal(true, i.customer_paid);
+  assert.equal("PAID", i.status);
+  assert.equal(
+    1,
+    f.db.arti.ledger.filter((x) => x.reference === "provider-payout-" + i.id)
+      .length,
+  );
+  assert.throws(
+    () => f.call("admin", "event/" + eid + "/next", {}),
+    /siguiente/,
+  );
+});

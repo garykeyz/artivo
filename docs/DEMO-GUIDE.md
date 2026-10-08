@@ -6,7 +6,7 @@
 
 12 perfiles artistas (incluidas 3 bandas), 5 líderes, 3 agencias, 5 empresas, 10 venues, 50 oportunidades, 100 eventos, 35 facturas y 20 pagos. Incluye acuerdos en negociación, servicios completados, fechas futuras, atraso, ausencias, 3 disputas y ejemplos de crédito, factoring, seguro y Fast Pay. Son datos ficticios. Las acciones crean más registros; **Restaurar demo** vuelve al estado inicial y conserva configuración.
 
-El seed amplía de forma aditiva la copia Pages v2 existente: mantiene publicaciones, likes, gastos y reservas anteriores hasta que el visitante decide restaurar. No hay sincronización entre visitantes; dos pestañas del mismo navegador sí comparten la copia y serializan las escrituras. La cuenta seleccionada es independiente por pestaña.
+El seed amplía de forma aditiva la copia Pages v2 existente: mantiene publicaciones, likes, gastos y reservas anteriores hasta que el visitante decide restaurar. No hay sincronización entre visitantes; dos pestañas del mismo navegador sí comparten la copia y serializan las escrituras. La cuenta seleccionada es independiente por pestaña. El botón «Cambiar personaje demo» junto al selector permite entrar como cualquiera de las 27 identidades sintéticas, incluidos los integrantes de equipos.
 
 ## Recorrido recomendado
 

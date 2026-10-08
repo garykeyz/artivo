@@ -117,7 +117,7 @@
       "active": 1,
       "radius": 30,
       "verified": 0,
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "user_id": 3,
@@ -133,7 +133,7 @@
       "active": 1,
       "radius": 25,
       "verified": 0,
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "user_id": 4,
@@ -149,7 +149,7 @@
       "active": 1,
       "radius": 50,
       "verified": 0,
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "user_id": 5,
@@ -165,7 +165,7 @@
       "active": 1,
       "radius": 30,
       "verified": 0,
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "user_id": 6,
@@ -181,7 +181,7 @@
       "active": 0,
       "radius": 50,
       "verified": 0,
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "user_id": 7,
@@ -197,7 +197,7 @@
       "active": 1,
       "radius": 25,
       "verified": 0,
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     }
   ],
   "posts": [
@@ -207,7 +207,7 @@
       "caption": "El Caribe suena a celebración. Música en vivo para compartir y disfrutar. 🌴",
       "media_url": "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=900&q=85",
       "media_type": "IMAGE",
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "id": 2,
@@ -215,7 +215,7 @@
       "caption": "A veces, una guitarra es todo lo que necesitas. Sesiones acústicas y canciones a tu medida. 🎸",
       "media_url": "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?auto=format&fit=crop&w=900&q=85",
       "media_type": "IMAGE",
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "id": 3,
@@ -223,7 +223,7 @@
       "caption": "Hay momentos que merecen una banda sonora especial. Saxofón en vivo para tu próxima celebración. ✨",
       "media_url": "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=900&q=85",
       "media_type": "IMAGE",
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "id": 4,
@@ -231,7 +231,7 @@
       "caption": "Un piano, una noche y las canciones que nunca se olvidan. Jazz y lounge para tu próximo evento. 🎹",
       "media_url": "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=900&q=85",
       "media_type": "IMAGE",
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "id": 5,
@@ -239,7 +239,7 @@
       "caption": "La noche empieza con un buen beat. ¿Listos para bailar? 🎧",
       "media_url": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=900&q=85",
       "media_type": "IMAGE",
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     },
     {
       "id": 6,
@@ -247,7 +247,7 @@
       "caption": "La música se siente más cerca cuando es en vivo. Voz, guitarra y mucho corazón. 🎤",
       "media_url": "https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&w=900&q=85",
       "media_type": "IMAGE",
-      "created_at": "2026-10-08 16:57:26"
+      "created_at": "2026-10-08 17:00:30"
     }
   ],
   "settings": {

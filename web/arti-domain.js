@@ -563,8 +563,20 @@
     for (let i = 0; i < 50; i++) {
       const dates = Array.from({ length: i === 0 ? 24 : 2 }, (_, j) => ({
         id: j + 1,
-        start: stamp(day(base, i === 0 ? 10 + j * 7 : 45 + i * 3 + j), "20:00"),
-        end: stamp(day(base, i === 0 ? 11 + j * 7 : 46 + i * 3 + j), "00:00"),
+        start: stamp(
+          day(
+            base,
+            i === 0 ? 8 + Math.floor(j / 2) * 7 + (j % 2) : 45 + i * 3 + j,
+          ),
+          "20:00",
+        ),
+        end: stamp(
+          day(
+            base,
+            i === 0 ? 9 + Math.floor(j / 2) * 7 + (j % 2) : 46 + i * 3 + j,
+          ),
+          "00:00",
+        ),
         capacity: i === 0 ? 1 : 2,
       }));
       a.opportunities.push({
@@ -1171,9 +1183,21 @@
           late_minutes: 0,
           setup: "PENDING",
         };
-        const scenarioDate = day(a.base, 400 + target.id);
+        let scenarioOffset = 0;
+        while (
+          conflict(
+            db,
+            2,
+            stamp(day(a.base, scenarioOffset), "20:00"),
+            stamp(day(a.base, scenarioOffset + 1), "00:00"),
+          ) &&
+          scenarioOffset < 730
+        )
+          scenarioOffset++;
+        const scenarioDate = day(a.base, scenarioOffset);
         target.start = stamp(scenarioDate, "20:00");
         target.end = stamp(day(scenarioDate, 1), "00:00");
+        target.venue_id = 1;
         target.call_time = new Date(
           Date.parse(target.start) - a.settings.call_minutes * 60000,
         ).toISOString();
@@ -1181,6 +1205,7 @@
           ...copy(o),
           id: next(a.opportunities),
           title: target.title,
+          venue_id: 1,
           owner_id: 8,
           rate: target.rate,
           dates: [{ id: 1, start: target.start, end: target.end, capacity: 1 }],

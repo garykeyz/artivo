@@ -33,7 +33,7 @@ Las dos pestañas comparten IndexedDB dentro del mismo navegador, pero mantienen
 
 ## ARTI ampliado — 8 de octubre de 2026
 
-- Se conservaron 49 pruebas Python y 13 del adaptador original. El dominio nuevo agrega 20 pruebas: seed, permisos, negociación/horario, holds, capacidad, servicio/factura, ledger, Fast Pay versus cobro empresarial, crédito, privacidad, equipos, archivos locales, escenarios/reset y reloj ficticio. Total: **82 pruebas**.
+- Se conservaron 49 pruebas Python y 13 del adaptador original. El dominio nuevo agrega 21 pruebas: seed, permisos, negociación/horario, holds, capacidad, servicio/factura, ledger, Fast Pay versus cobro empresarial, crédito, privacidad, equipos, archivos locales, escenarios/reset y reloj ficticio. Total: **83 pruebas**.
 - Seed reproducible: 12 perfiles artistas, 5 líderes, 3 agencias, 5 empresas, 10 venues, 50 oportunidades, 100 eventos, 35 facturas y 20 pagos.
 - Prueba visual de extremo a extremo: Empresa publicó «Prueba ARTI · Piano y eventos», dos fechas; Gary propuso US$300 y 21:00–01:00; Empresa contraofertó US$275 + transporte; Gary aceptó. Los dos eventos conservaron esas condiciones. GPS mock → evidencia → verificación Empresa → inicio/finalización Artista → factura INV-10036 NET 90 → factoring y seguro mock → Fast Pay → cobro Empresa. El payout no se duplicó y la financiación se liquidó.
 - Se verificó el escenario Ausencia y sustitución: preparó NO_SHOW, cambió a Empresa, mostró candidatos AVAILABLE/CONFLICT y asignó Elena Rivera como intérprete. Evento cambió a CONFIRMED.
@@ -41,3 +41,5 @@ Las dos pestañas comparten IndexedDB dentro del mismo navegador, pero mantienen
 - Evidencia: [Escenarios laptop](screenshots/arti-scenarios-laptop.png), [Equipo tablet](screenshots/arti-leader-tablet.png), [Equipo móvil](screenshots/arti-leader-mobile.png), [Admin móvil](screenshots/arti-admin-mobile.png).
 - La exportación de factura es HTML marcado DEMO, con impresión a PDF disponible en el navegador. El botón dio feedback; el evento de descarga del navegador interno no devolvió un archivo verificable y no se cuenta como prueba de descarga completa.
 - Video de portfolio local: clip sintético H.264 de 4 segundos, 640×360, generado con el script Swift incluido. No representa una actuación real.
+
+- Se verificó Reset en la UI: volvió a 50 oportunidades y 100 eventos; también el reloj del escenario y la advertencia de retraso.
