@@ -324,7 +324,7 @@ function mobileNav() {
     .filter(Boolean)
     .map(
       ([id, i, label]) =>
-        `<button data-nav="${id}" class="${id === state.page ? "active" : ""}">${icon(i)}${labels[id] || label}</button>`,
+        `<button data-nav="${id}" class="${id === state.page ? "active" : ""}" title="${esc(label)}" aria-label="${esc(labels[id] || label)}">${icon(i)}${labels[id] || label}</button>`,
     )
     .join("");
 }
@@ -353,7 +353,7 @@ function shell() {
   const nav = navItems(),
     item = nav.find((n) => n[0] === state.page) || nav[0];
   $("#app").innerHTML =
-    `<aside class="sidebar">${brand()}<div class="tagline">TALENTO EN MOVIMIENTO</div><div class="nav-label">TU ESPACIO</div><nav class="nav">${nav.map(([id, i, label]) => `<button data-nav="${id}" class="${id === state.page ? "active" : ""}">${icon(i)}<span>${label}</span></button>`).join("")}</nav><div class="sidebar-bottom"><div class="pro-card">${icon("bolt")}<h4>${state.user.role === "ARTIST" ? "Tu talento, más lejos." : "Haz que sea inolvidable."}</h4><p>${state.user.role === "ARTIST" ? "Activa tu perfil y conecta con nuevas oportunidades." : "El artista perfecto para cada uno de tus momentos."}</p><button data-nav="${state.user.role === "ARTIST" ? "profile" : "discover"}">${state.user.role === "ARTIST" ? "Completar mi perfil" : "Explorar artistas"} ↗</button></div><div class="account"><div class="avatar">${esc(
+    `<aside class="sidebar">${brand()}<div class="tagline">TALENTO EN MOVIMIENTO</div><div class="nav-label">TU ESPACIO</div><nav class="nav">${nav.map(([id, i, label]) => `<button data-nav="${id}" class="${id === state.page ? "active" : ""}" title="${esc(label)}" aria-label="${esc(label)}">${icon(i)}<span>${label}</span></button>`).join("")}</nav><div class="sidebar-bottom"><div class="pro-card">${icon("bolt")}<h4>${state.user.role === "ARTIST" ? "Tu talento, más lejos." : "Haz que sea inolvidable."}</h4><p>${state.user.role === "ARTIST" ? "Activa tu perfil y conecta con nuevas oportunidades." : "El artista perfecto para cada uno de tus momentos."}</p><button data-nav="${state.user.role === "ARTIST" ? "profile" : "discover"}">${state.user.role === "ARTIST" ? "Completar mi perfil" : "Explorar artistas"} ↗</button></div><div class="account"><div class="avatar">${esc(
       state.user.name
         .split(" ")
         .map((x) => x[0])
