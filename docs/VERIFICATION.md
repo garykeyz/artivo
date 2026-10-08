@@ -46,7 +46,7 @@ Las dos pestañas comparten IndexedDB dentro del mismo navegador, pero mantienen
 
 ## Continuación incremental — 8 de octubre de 2026
 
-- 49 pruebas Python y 57 pruebas JavaScript aprobadas (106 total).
+- 49 pruebas Python y 58 pruebas JavaScript aprobadas (107 total).
 - Syntax check de todos los archivos `web/*.js`; build público desde seed independiente; `git diff --check` limpio.
 - Política exacta: 168h30m, 168h, 72h, 24h, cinco horas, offsets y timestamps locales del venue; 29h para hoy 15:00 → mañana 20:00.
 - Preview sin cancelación inmediata; cancelación idempotente, instancia aislada de serie, ledger equilibrado, splits con redondeo exacto, refund y compensación separados.

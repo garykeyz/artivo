@@ -673,11 +673,30 @@
     static calculateClientRefund(e, pool) {
       return e.funds_status === "FUNDED" ? e.rate - pool : 0;
     }
+    static allocatePenaltyPool(pool, policy) {
+      const pairs = [
+        ["provider_compensation", policy.provider_share_bps],
+        ["arti_fee", policy.arti_share_bps],
+        ["processing_cost", policy.processing_share_bps],
+        ["taxes", policy.tax_share_bps || 0],
+      ].map(([key, bps]) => ({
+        key,
+        value: Math.floor((pool * bps) / 10000),
+        fraction: (pool * bps) % 10000,
+      }));
+      let residual = pool - pairs.reduce((s, p) => s + p.value, 0);
+      for (const row of [...pairs].sort((a, b) => b.fraction - a.fraction)) {
+        if (residual <= 0) break;
+        row.value++;
+        residual--;
+      }
+      return Object.fromEntries(pairs.map((p) => [p.key, p.value]));
+    }
     static calculateProviderCompensation(pool, policy) {
-      return Math.round((pool * policy.provider_share_bps) / 10000);
+      return this.allocatePenaltyPool(pool, policy).provider_compensation;
     }
     static calculateArtiFeeImpact(pool, policy) {
-      return Math.round((pool * policy.arti_share_bps) / 10000);
+      return this.allocatePenaltyPool(pool, policy).arti_fee;
     }
     static generateCancellationBreakdown(e, at = now(), actor = "CLIENT") {
       const window = this.calculateCancellationWindow(e, at);
@@ -693,15 +712,8 @@
       const policy = this.getApplicablePolicy(e, window),
         funded = e.funds_status === "FUNDED",
         pool = funded ? this.calculatePenalty(e, policy, actor) : 0,
-        provider_compensation = this.calculateProviderCompensation(
-          pool,
-          policy,
-        ),
-        arti_fee = this.calculateArtiFeeImpact(pool, policy),
-        processing_cost = Math.round(
-          (pool * policy.processing_share_bps) / 10000,
-        ),
-        taxes = pool - provider_compensation - arti_fee - processing_cost;
+        { provider_compensation, arti_fee, processing_cost, taxes } =
+          this.allocatePenaltyPool(pool, policy);
       return {
         ...window,
         original_booking_amount: e.rate,

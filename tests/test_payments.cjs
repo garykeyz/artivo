@@ -319,3 +319,25 @@ test("low income cannot produce a Fast Pay fee greater than available earnings",
     q = P.PricingEngine.fastPay(f.db, { net: 500, currency: "USD" });
   assert.equal(q.net + q.fee, 500);
 });
+test("configured cancellation pools allocate every cent without negative taxes or fees", () => {
+  const policy = {
+    provider_share_bps: 3333,
+    arti_share_bps: 3333,
+    processing_share_bps: 3334,
+    tax_share_bps: 0,
+  };
+  for (const amount of [1, 2, 3, 5, 7, 100001]) {
+    const allocation = P.CancellationPolicyEngine.allocatePenaltyPool(
+      amount,
+      policy,
+    );
+    assert.equal(
+      Object.values(allocation).reduce((s, x) => s + x, 0),
+      amount,
+    );
+    assert.ok(
+      Object.values(allocation).every((x) => x >= 0 && Number.isInteger(x)),
+    );
+    assert.equal(allocation.taxes, 0);
+  }
+});
