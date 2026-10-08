@@ -4,9 +4,9 @@
 
 ## Datos iniciales
 
-12 perfiles artistas (incluidas 3 bandas), 5 líderes, 3 agencias, 5 empresas, 10 venues, 50 oportunidades, 100 eventos, 35 facturas y 20 pagos. Incluye acuerdos en negociación, servicios completados, fechas futuras, atraso, ausencias, 3 disputas y ejemplos de crédito, factoring, seguro y Fast Pay. Son datos ficticios. Las acciones crean más registros; **Restaurar demo** vuelve al estado inicial y conserva configuración.
+58 perfiles de talento, 22 categorías, 5 líderes, 3 agencias, 5 empresas, 10 venues, 101 oportunidades, 200 eventos y 81 facturas. Incluye 7 pagos de bookings protegidos además de los pagos históricos. Incluye acuerdos en negociación, servicios completados, fechas futuras, atraso, ausencias, 3 disputas y ejemplos de crédito, factoring, seguro y Fast Pay. Son datos ficticios. Las acciones crean más registros; **Restaurar demo** vuelve al estado inicial y conserva configuración.
 
-El seed amplía de forma aditiva la copia Pages v2 existente: mantiene publicaciones, likes, gastos y reservas anteriores hasta que el visitante decide restaurar. No hay sincronización entre visitantes; dos pestañas del mismo navegador sí comparten la copia y serializan las escrituras. La cuenta seleccionada es independiente por pestaña. El botón «Cambiar personaje demo» junto al selector permite entrar como cualquiera de las 27 identidades sintéticas, incluidos los integrantes de equipos.
+El seed amplía de forma aditiva la copia Pages v2 existente: mantiene publicaciones, likes, gastos y reservas anteriores hasta que el visitante decide restaurar. No hay sincronización entre visitantes; dos pestañas del mismo navegador sí comparten la copia y serializan las escrituras. La cuenta seleccionada es independiente por pestaña. El botón «Cambiar personaje demo» junto al selector permite entrar como cualquiera de las 73 identidades sintéticas, incluidos los integrantes de equipos.
 
 ## Recorrido recomendado
 
@@ -44,3 +44,7 @@ El clip original sintético se reproduce con `swift scripts/generate_demo_media.
 ## Límites explícitos
 
 La factura descargable es HTML marcado DEMO y puede imprimirse a PDF; no tiene validez fiscal. El navegador interno puede tratar descargas de forma diferente a Chrome/Safari. Los usuarios, reputación, distancias, verificación, crédito y riesgos son ficticios. El flujo financiero sirve para explicar el producto, no como implementación bancaria ni contabilidad regulatoria. No hay KYC, MFA, escaneo, streaming adaptativo, GPS antifraude ni acuerdos jurídicos reales. La [arquitectura A–Z](architecture/ARTI-ARCHITECTURE.md) describe la evolución posterior y distingue el diseño futuro de lo implementado.
+
+## Continuación actual
+
+[Roles, talento universal, payouts, cancelación exacta y archivos](INCREMENTAL-DEMO.md). Incluye el recorrido de cliente, profesionales técnicos, paquetes, política oficial y controles de demostración.

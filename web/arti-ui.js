@@ -68,7 +68,8 @@ async function artiAction(path, data = {}, after) {
     const r = await api("/api/arti/" + path, data);
     toast(r.message || "Acción registrada");
     closeModal();
-    await loadArti(state.renderVersion);
+    if (state.page === "feed") await loadFeed(state.renderVersion);
+    else await loadArti(state.renderVersion);
     if (after) await after(r);
     return r;
   } catch (e) {
@@ -93,9 +94,15 @@ function artiTabs() {
     ["finance", "Finanzas"],
     ["journal", "Guía ARTI"],
     ...(d.role === "ADMIN" ? [["admin", "Administración"]] : []),
-  ];
+  ].filter(([id]) => ArtiAccess.tabs(state.user).includes(id));
 }
 function renderArti() {
+  if (
+    state.boot.static_demo &&
+    ArtiAccess.route(state.user, state.page) &&
+    state.page !== "feed"
+  )
+    return renderRoleWorkspace();
   const d = artiUI.data;
   if (!d) return;
   const titles = {
@@ -181,14 +188,8 @@ function artiOverview() {
     e = d.events,
     active = e.filter((e) => !["SETTLED", "CANCELLED"].includes(e.status));
   $("#arti-content").innerHTML =
-    `<div class="stats-grid"><div class="stat accent"><small>Eventos activos</small><strong>${active.length}</strong><span class="sub">${e.filter((e) => e.status === "NO_SHOW").length} requieren sustitución</span></div><div class="stat"><small>Oportunidades abiertas</small><strong>${d.opportunities.filter((o) => o.status === "OPEN").length}</strong><span class="sub">${d.opportunities.reduce((s, o) => s + o.dates.length, 0)} fechas publicadas</span></div><div class="stat"><small>En negociación</small><strong>${d.offers.filter((f) => f.status === "NEGOTIATING").length}</strong><span class="sub">Condiciones y horarios flexibles</span></div><div class="stat"><small>Servicios facturados</small><strong class="arti-amount">${artiTotals(d.invoices, "total")}</strong><span class="sub">Monedas separadas · importes demo</span></div></div>${d.credits.map((c) => `<section class="arti-credit"><div><div class="eyebrow">ARTI CREDIT · SIMULADO</div><h2>${artiName(c.owner_id)}</h2><p>NET ${c.terms} · ${c.status}</p></div><div><small>Límite</small><strong>${artiCash(c.limit, c.currency)}</strong></div><div><small>Utilizado</small><strong>${artiCash(c.used, c.currency)}</strong></div><div><small>Disponible</small><strong>${artiCash(c.limit - c.used, c.currency)}</strong></div>${artiBtn("Simular revisión", `data-credit="${c.id}"`)}</section>`).join("")}<div class="arti-overview-grid"><section class="panel"><div class="section-head"><h2>Tu siguiente paso</h2></div><div class="arti-quick">${[
-      ["opportunities", "compass", "Explorar demanda"],
-      ["offers", "chat", "Revisar propuestas"],
-      ["events", "calendar", "Centro de eventos"],
-      ["teams", "users", "Coordinar equipo"],
-      ["finance", "wallet", "Facturas y cobros"],
-      ["journal", "shield", "Cómo funciona ARTI"],
-    ]
+    `<div class="stats-grid"><div class="stat accent"><small>Eventos activos</small><strong>${active.length}</strong><span class="sub">${e.filter((e) => e.status === "NO_SHOW").length} requieren sustitución</span></div><div class="stat"><small>Oportunidades abiertas</small><strong>${d.opportunities.filter((o) => o.status === "OPEN").length}</strong><span class="sub">${d.opportunities.reduce((s, o) => s + o.dates.length, 0)} fechas publicadas</span></div><div class="stat"><small>En negociación</small><strong>${d.offers.filter((f) => f.status === "NEGOTIATING").length}</strong><span class="sub">Condiciones y horarios flexibles</span></div><div class="stat"><small>Servicios facturados</small><strong class="arti-amount">${artiTotals(d.invoices, "total")}</strong><span class="sub">Monedas separadas · importes demo</span></div></div>${d.credits.map((c) => `<section class="arti-credit"><div><div class="eyebrow">ARTI CREDIT · SIMULADO</div><h2>${artiName(c.owner_id)}</h2><p>NET ${c.terms} · ${c.status}</p></div><div><small>Límite</small><strong>${artiCash(c.limit, c.currency)}</strong></div><div><small>Utilizado</small><strong>${artiCash(c.used, c.currency)}</strong></div><div><small>Disponible</small><strong>${artiCash(c.limit - c.used, c.currency)}</strong></div>${artiBtn("Simular revisión", `data-credit="${c.id}"`)}</section>`).join("")}<div class="arti-overview-grid"><section class="panel"><div class="section-head"><h2>Tu siguiente paso</h2></div><div class="arti-quick">${roleQuickActions()
+      .map((n) => [n.id, n.icon, n.label])
       .map(
         ([id, i, label]) =>
           `<button data-quick="${id}">${icon(i)}<span>${label}</span>${icon("arrow")}</button>`,
@@ -208,8 +209,7 @@ function artiOverview() {
   $$("[data-quick]").forEach(
     (b) =>
       (b.onclick = () => {
-        artiUI.tab = b.dataset.quick;
-        renderArti();
+        navigate(b.dataset.quick);
       }),
   );
   $$("[data-credit]").forEach(
@@ -218,9 +218,12 @@ function artiOverview() {
 }
 function artiOpportunities() {
   const d = artiUI.data,
-    can = ["CLIENT", "ENTERPRISE", "LEADER", "AGENCY"].includes(d.role),
+    can = ArtiAccess.can(state.user, "opportunity.create"),
     filtered = d.opportunities.filter(
       (o) =>
+        (state.page !== "opportunities" ||
+          d.role !== "ENTERPRISE" ||
+          o.owner_id === state.user.id) &&
         (!artiUI.search ||
           [o.title, o.city, artiName(o.owner_id)]
             .join(" ")
@@ -281,11 +284,22 @@ function artiCreateOpportunity() {
     `<form id="arti-opportunity-form"><div class="form-grid">${field("Título", "title", "text", "", 'required maxlength="120"')}${select(
       "Categoría",
       "category",
-      ["DJ", "Pianista", "Cantante", "Banda", "Técnico"].map((x) => ({
-        value: x,
-        label: x,
-      })),
+      d.taxonomy
+        .filter((t) => t.kind === "CATEGORY" && t.enabled)
+        .map((t) => ({ value: t.key, label: t.name })),
     )}${select(
+      "¿Qué necesitas?",
+      "demand_type",
+      [
+        "ONE PROFESSIONAL",
+        "A TEAM",
+        "MULTIPLE PROFESSIONALS",
+        "FULL PRODUCTION",
+        "TEMPORARY CONTRACT",
+        "SEASONAL CONTRACT",
+        "RECURRING CONTRACT",
+      ].map((x) => ({ value: x, label: x })),
+    )}${field("Hora de llamada (minutos antes)", "call_minutes", "number", 60, 'min="0" max="1440" required')}${select(
       "Venue",
       "venue_id",
       venues.map((v) => ({ value: v.id, label: v.name })),
@@ -301,19 +315,29 @@ function artiCreateOpportunity() {
         label: x ? "NET " + x : "Inmediato",
       })),
       90,
-    )}${field("Límite de propuestas", "deadline", "date", date, "required")}<div class="field"><label><input type="checkbox" name="negotiable" checked> Permitir negociación</label></div><div class="field full"><label for="requirements">Requisitos</label><textarea id="requirements" name="requirements" required>Equipo propio, transporte y repertorio a acordar.</textarea></div></div><p class="legal">Call time: ${d.settings.call_minutes} minutos antes. La tarifa final depende del acuerdo.</p><p class="error"></p><div class="form-actions"><button class="btn" type="submit">Publicar oportunidad</button></div></form>`,
+    )}${field("Límite de propuestas", "deadline", "date", date, "required")}<div class="field"><label><input type="checkbox" name="negotiable" checked> Permitir negociación</label></div><div class="field full"><label for="requirements">Requisitos</label><textarea id="requirements" name="requirements" required>Equipo propio, transporte y repertorio a acordar.</textarea></div></div><section class="field full"><h3>Plazas por profesión (paquete opcional)</h3><div id="staffing-builder"></div><button type="button" class="btn light small" id="staffing-add">Añadir profesión al paquete</button></section><p class="legal">La hora de llamada se define por contrato y profesión. Las tarifas finales dependen del acuerdo.</p><p class="error"></p><div class="form-actions"><button class="btn" type="submit">Publicar oportunidad</button></div></form>`,
     true,
   );
+  const staffingRows = [];
+  bindStaffingBuilder(staffingRows, d);
+  $("#category").onchange = () => {
+    const key = $("#category").value;
+    $("#call_minutes").value =
+      { AUDIO: 180, LIGHTING: 240, VIDEO: 240, STAGE: 360 }[key] || 60;
+  };
   bindForm("#arti-opportunity-form", async (f) => {
     const r = await api("/api/arti/opportunities", {
       ...f,
+      category_key: f.category,
+      category: d.taxonomy.find((t) => t.key === f.category)?.name,
+      staffing: readStaffingBuilder(),
       rate: Math.round(Number(f.rate) * 100),
       negotiable: !!f.negotiable,
     });
     toast(r.message);
     closeModal();
     artiUI.tab = "opportunities";
-    await loadArti(state.renderVersion);
+    await navigate("opportunities");
   });
 }
 function artiOpportunity(id) {
@@ -357,13 +381,13 @@ function artiOpportunity(id) {
               )
               .map((u) => ({
                 value: u.id,
-                label: u.name + " · " + ArtiDomain.role(u),
+                label: u.name + " · " + (u.profession || ArtiDomain.role(u)),
               })),
           )}</div><p class="error"></p><div class="form-actions"><button type="submit" class="btn">Invitar a las fechas seleccionadas</button></div></form>`
         : provider && !offer
           ? `<form id="arti-apply"><div class="form-grid">${field("Tu tarifa por evento (" + o.currency + ")", "rate", "number", o.rate / 100, 'required min="1" step="0.01"')}${field("Inicio propuesto", "start_time", "time", o.dates[0].start.slice(11, 16), "required")}${field("Fin propuesto", "end_time", "time", o.dates[0].end.slice(11, 16), "required")}${d.role === "LEADER" ? select("Equipo (opcional)", "team_id", [{ value: "", label: "Sin equipo" }, ...d.teams.filter((t) => t.leader_id === state.user.id).map((t) => ({ value: t.id, label: t.name }))]) : ""}<div class="field full"><label for="conditions">Condiciones propuestas</label><textarea id="conditions" name="conditions" required>${esc(o.requirements)}</textarea></div></div><p class="error"></p><div class="form-actions"><button type="submit" class="btn">Aplicar / negociar</button></div></form>`
           : ""
-    }<div class="form-actions">${artiBtn("Guardar", 'id="arti-save-opp"')}${!own ? artiBtn("Declinar", 'id="arti-decline-opp"') : ""}</div>`,
+    }${talentOpportunityStaffing(o)}<div class="form-actions">${artiBtn("Guardar", 'id="arti-save-opp"')}${!own ? artiBtn("Declinar", 'id="arti-decline-opp"') : ""}</div>`,
     true,
   );
   $("#arti-select-all").onclick = () =>
@@ -445,7 +469,7 @@ function artiOffer(id) {
   );
 }
 function artiEventRow(e) {
-  return `<div class="booking-row"><div class="booking-info"><h3>${esc(e.title)}</h3><p>${dateStr(e.start)} · ${timeStr(e.start)} · ${esc(artiName(e.performer_id))}</p>${artiBadge(e.status)} ${e.late_minutes ? '<span class="badge red">17 min tarde</span>' : ""}</div><div class="arti-row-end"><strong>${artiCash(e.rate, e.currency)}</strong>${artiBtn("Abrir evento", `data-event="${e.id}"`)}</div></div>`;
+  return `<div class="booking-row"><div class="booking-info"><h3>${esc(e.title)}</h3><p>${dateStr(e.start)} · ${timeStr(e.start)} · ${esc(artiName(e.performer_id))}</p>${artiBadge(e.status)} ${e.cancellation ? `<p>Cancelado por ${e.cancellation.actor === "CLIENT" ? "cliente" : "proveedor"} · compensación ${artiCash(e.cancellation.provider_compensation, e.currency)}</p>` : ""} ${e.late_minutes ? '<span class="badge red">17 min tarde</span>' : ""}</div><div class="arti-row-end"><strong>${artiCash(e.rate, e.currency)}</strong>${artiBtn("Abrir evento", `data-event="${e.id}"`)}</div></div>`;
 }
 function artiEvents() {
   const d = artiUI.data,
@@ -512,9 +536,17 @@ function artiEvent(id) {
             .map(([a, l]) => artiBtn(l, `data-event-action="${a}"`))
             .join("")
         : ""
-    }${(provider || admin) && ["ARRIVED", "SETUP"].includes(e.status) ? artiBtn("Subir evidencia de ejemplo", 'data-event-action="setup"', false) : ""}${(owner || admin) && e.status === "SETUP_SUBMITTED" ? artiBtn("Verificar setup", 'data-event-action="verify_setup"', false) + artiBtn("Rechazar setup", 'data-event-action="reject_setup"') : ""}${(provider || admin) && e.status === "SETUP_VERIFIED" ? artiBtn("Iniciar evento", 'data-event-action="start"', false) : ""}${(provider || admin) && e.status === "IN_PROGRESS" ? artiBtn("Completar evento", 'data-event-action="complete"', false) : ""}${(owner || admin) && e.status === "COMPLETED" ? artiBtn("Verificar servicio y facturar", 'data-event-action="verify"', false) : ""}${admin && !["SETTLED", "DISPUTED", "NO_SHOW"].includes(e.status) ? artiBtn("Siguiente estado · presentador", 'data-event-action="next"') : ""}${invoice ? artiBtn("Ver factura", `data-invoice="${invoice.id}"`, false) : ""}${artiBtn("Abrir disputa", 'id="arti-open-dispute"')}</div>${
+    }${(provider || admin) && ["ARRIVED", "SETUP"].includes(e.status) ? artiBtn("Subir evidencia de ejemplo", 'data-event-action="setup"', false) : ""}${(owner || admin) && e.status === "SETUP_SUBMITTED" ? artiBtn("Verificar setup", 'data-event-action="verify_setup"', false) + artiBtn("Rechazar setup", 'data-event-action="reject_setup"') : ""}${(provider || admin) && e.status === "SETUP_VERIFIED" ? artiBtn("Iniciar evento", 'data-event-action="start"', false) : ""}${(provider || admin) && e.status === "IN_PROGRESS" ? artiBtn("Completar evento", 'data-event-action="complete"', false) : ""}${(owner || admin) && e.status === "COMPLETED" ? artiBtn("Verificar servicio y facturar", 'data-event-action="verify"', false) : ""}${admin && !["CANCELLED", "SETTLED", "DISPUTED", "NO_SHOW"].includes(e.status) ? artiBtn("Siguiente estado · presentador", 'data-event-action="next"') : ""}${invoice ? artiBtn("Ver factura", `data-invoice="${invoice.id}"`, false) : ""}${artiBtn("Abrir disputa", 'id="arti-open-dispute"')}</div>${
       coordinator &&
-      !["SETTLED", "INVOICED", "SERVICE_VERIFIED"].includes(e.status)
+      d.role !== "CLIENT" &&
+      !e.staffing_assignments?.length &&
+      ![
+        "CANCELLED",
+        "DISPUTED",
+        "SETTLED",
+        "INVOICED",
+        "SERVICE_VERIFIED",
+      ].includes(e.status)
         ? `<form id="arti-assignment"><div class="form-grid">${select(
             e.status === "NO_SHOW"
               ? "Candidatos para sustitución"
@@ -535,7 +567,7 @@ function artiEvent(id) {
             e.performer_id,
           )}<div class="field"><label>Disponibilidad</label><small>El sistema comprueba conflictos al confirmar. Distancia y reputación de muestra.</small></div></div><p class="error"></p><div class="form-actions"><button class="btn" type="submit">${e.status === "NO_SHOW" ? "Asignar sustituto" : "Asignar artista"}</button></div></form>`
         : ""
-    }<h3>Evidencia del evento</h3><div class="arti-evidence">${e.evidence.map((x) => `<article><img src="${esc(x.url)}" alt="Setup demo"><p>${esc(x.at)} · ${esc(artiName(x.by))}</p><small>Evento #${x.event_id} · BOOKING_ONLY · asset mock</small></article>`).join("") || '<p class="muted">La foto de setup se registra después de la llegada.</p>'}</div><h3>Historial</h3><div class="arti-history">${e.history.map((h) => `<p><b>${esc(artiStatus[h.status] || h.status)}</b> · ${esc(artiName(h.by))} <small>${esc(h.at)}</small></p>`).join("") || '<p class="muted">El próximo cambio quedará registrado aquí.</p>'}</div>`,
+    }${talentTechnicalMarkup(e)}${talentStaffingMarkup(e)}<h3>Evidencia del evento</h3><div class="arti-evidence">${e.evidence.map((x) => `<article><img src="${esc(x.url)}" alt="Setup demo"><p>${esc(x.at)} · ${esc(artiName(x.by))}</p><small>Evento #${x.event_id} · BOOKING_ONLY · asset mock</small></article>`).join("") || '<p class="muted">La foto de setup se registra después de la llegada.</p>'}</div><h3>Historial</h3><div class="arti-history">${e.history.map((h) => `<p><b>${esc(artiStatus[h.status] || h.status)}</b> · ${esc(artiName(h.by))} <small>${esc(h.at)}</small></p>`).join("") || '<p class="muted">El próximo cambio quedará registrado aquí.</p>'}</div>`,
     true,
   );
   $$("[data-event-action]").forEach(
@@ -592,6 +624,8 @@ function artiEvent(id) {
       option.disabled = c ? !c.available : false;
     });
   bindArtiCommon();
+  bindTalentEvent(e);
+  appendMoneyEvent(e);
   artiTick();
 }
 function artiTeams() {
@@ -678,6 +712,16 @@ function artiFinance() {
     }</section>`;
 }
 function artiInvoice(id) {
+  const protectedInvoice = artiUI.data.invoices.find(
+    (i) => i.id === Number(id),
+  );
+  if (
+    artiUI.data.events.find((e) => e.id === protectedInvoice?.event_id)
+      ?.payment_model === "PROTECTED_V2"
+  ) {
+    artiEvent(protectedInvoice.event_id);
+    return;
+  }
   const d = artiUI.data,
     i = d.invoices.find((x) => x.id === id),
     e = d.events.find((e) => e.id === i.event_id),
@@ -689,7 +733,7 @@ function artiInvoice(id) {
   modal(
     "Factura " + i.number,
     "Documento demo · sin validez fiscal",
-    `<div class="arti-invoice"><header><h2>ARTI</h2>${artiBadge(i.status)}</header><p><b>Solicitante:</b> ${esc(artiName(i.owner_id))}<br><b>Proveedor:</b> ${esc(artiName(i.provider_id))}<br><b>Servicio:</b> ${esc(e.title)}<br><b>Evento:</b> ${dateStr(e.start)} · ${timeStr(e.start)}–${timeStr(e.end)}<br><b>Condiciones:</b> ${esc(e.conditions)}</p><div class="arti-invoice-total"><span>Total</span><strong>${artiCash(i.total, i.currency)}</strong></div><p>NET ${i.terms} · vence ${esc(i.due)} · ${i.customer_paid ? "empresa pagó" : "cuenta por cobrar a la empresa"}</p><div class="detail-grid"><div><small>COSTE FACTORING</small><strong>${artiCash(financeFee, i.currency)}</strong></div><div><small>COMISIÓN TOTAL</small><strong>${artiCash(fee, i.currency)}</strong></div><div><small>NETO ESTÁNDAR</small><strong>${artiCash(i.total - fee - financeFee, i.currency)}</strong></div><div><small>FEE FAST PAY</small><strong>${artiCash(fast, i.currency)}</strong></div><div><small>NETO FAST PAY</small><strong>${artiCash(i.total - fee - fast - financeFee, i.currency)}</strong></div></div></div>${f ? `<div class="arti-financial"><h3>Factoring · ${f.status}</h3><p>${esc(f.provider)} · anticipo ${artiCash(f.advance, i.currency)} · coste ${artiCash(f.fee, i.currency)}</p><small>Financiación ficticia · sin partner real ni desembolso.</small></div>` : ""}${insurance ? `<div class="arti-financial"><h3>Seguro demo · ${insurance.status}</h3><p>${esc(insurance.provider)} · cobertura ${artiCash(insurance.coverage, i.currency)} (${insurance.coverage_bps / 100}%)</p><small>No existe cobertura real.</small></div>` : ""}<div class="arti-event-actions">${!i.customer_paid ? `${d.role === "ADMIN" || state.user.id === i.owner_id ? artiBtn("Simular pago", 'data-invoice-action="pay"', false) + artiBtn("Simular fallo", 'data-invoice-action="failed"') + artiBtn("Simular procesamiento", 'data-invoice-action="processing"') + artiBtn("Simular vencimiento", 'data-invoice-action="overdue"') : ""}${!i.settled && (d.role === "ADMIN" || [i.provider_id, e.performer_id].includes(state.user.id)) ? artiBtn("Simular Fast Pay", 'data-invoice-action="fastpay"', false) : ""}${!i.settled && !f && (d.role === "ADMIN" || [i.owner_id, i.provider_id].includes(state.user.id)) ? artiBtn("Simular financiación", 'data-invoice-action="finance"') : ""}` : ""}${!insurance && (d.role === "ADMIN" || [i.owner_id, i.provider_id].includes(state.user.id)) ? artiBtn("Activar seguro demo", 'data-invoice-action="insurance"') : ""}${artiBtn("Descargar factura demo", 'id="arti-download-invoice"')}</div>${i.settled ? `<p class="arti-note">Neto liquidado ${artiCash(i.net, i.currency)} · ARTI ${artiCash(i.platform_fee, i.currency)} · agencia ${artiCash(i.agency_fee, i.currency)} · Fast Pay ${artiCash(i.fastpay_fee, i.currency)} · financiación ${artiCash(i.financing_fee, i.currency)}</p>` : ""}`,
+    `<div class="arti-invoice"><header><h2>ARTI</h2>${artiBadge(i.status)}</header><p><b>Solicitante:</b> ${esc(artiName(i.owner_id))}<br><b>Proveedor:</b> ${esc(artiName(i.provider_id))}<br><b>Servicio:</b> ${esc(e.title)}<br><b>Evento:</b> ${dateStr(e.start)} · ${timeStr(e.start)}–${timeStr(e.end)}<br><b>Condiciones:</b> ${esc(e.conditions)}</p><div class="arti-invoice-total"><span>Total</span><strong>${artiCash(i.total, i.currency)}</strong></div><p>NET ${i.terms} · vence ${esc(i.due)} · ${i.customer_paid ? "empresa pagó" : "cuenta por cobrar a la empresa"}</p><div class="detail-grid"><div><small>COSTE FACTORING</small><strong>${artiCash(financeFee, i.currency)}</strong></div><div><small>COMISIÓN TOTAL</small><strong>${artiCash(fee, i.currency)}</strong></div><div><small>NETO ESTÁNDAR</small><strong>${artiCash(i.total - fee - financeFee, i.currency)}</strong></div><div><small>FEE FAST PAY</small><strong>${artiCash(fast, i.currency)}</strong></div><div><small>NETO FAST PAY</small><strong>${artiCash(i.total - fee - fast - financeFee, i.currency)}</strong></div></div></div>${f ? `<div class="arti-financial"><h3>Factoring · ${f.status}</h3><p>${esc(f.provider)} · anticipo ${artiCash(f.advance, i.currency)} · coste ${artiCash(f.fee, i.currency)}</p><small>Financiación ficticia · sin partner real ni desembolso.</small></div>` : ""}${insurance ? `<div class="arti-financial"><h3>Seguro demo · ${insurance.status}</h3><p>${esc(insurance.provider)} · cobertura ${artiCash(insurance.coverage, i.currency)} (${insurance.coverage_bps / 100}%)</p><small>No existe cobertura real.</small></div>` : ""}<div class="arti-event-actions">${!i.customer_paid ? `${d.role === "ADMIN" || state.user.id === i.owner_id ? artiBtn("Simular pago", 'data-invoice-action="pay"', false) + artiBtn("Simular fallo", 'data-invoice-action="failed"') + artiBtn("Simular procesamiento", 'data-invoice-action="processing"') + artiBtn("Simular vencimiento", 'data-invoice-action="overdue"') : ""}${!i.settled && (d.role === "ADMIN" || [i.provider_id, e.performer_id].includes(state.user.id)) ? artiBtn("Simular Fast Pay", 'data-invoice-action="fastpay"', false) : ""}${!i.settled && !f && ["ADMIN", "ENTERPRISE"].includes(d.role) && (d.role === "ADMIN" || i.owner_id === state.user.id) ? artiBtn("Simular financiación", 'data-invoice-action="finance"') : ""}` : ""}${!insurance && ["ADMIN", "ENTERPRISE"].includes(d.role) && (d.role === "ADMIN" || i.owner_id === state.user.id) ? artiBtn("Activar seguro demo", 'data-invoice-action="insurance"') : ""}${artiBtn("Descargar factura demo", 'id="arti-download-invoice"')}</div>${i.settled ? `<p class="arti-note">Neto liquidado ${artiCash(i.net, i.currency)} · ARTI ${artiCash(i.platform_fee, i.currency)} · agencia ${artiCash(i.agency_fee, i.currency)} · Fast Pay ${artiCash(i.fastpay_fee, i.currency)} · financiación ${artiCash(i.financing_fee, i.currency)}</p>` : ""}`,
     true,
   );
   $$("[data-invoice-action]").forEach(
@@ -914,8 +958,9 @@ async function renderArtiScenarios(version) {
             : b.dataset.scenario === "enterprise"
               ? "overview"
               : "opportunities";
-        state.page = "arti";
+        state.page = r.event_id ? "events" : "opportunities";
         await render();
+        closeModal();
         if (r.event_id) artiEvent(r.event_id);
         else if (
           [
@@ -930,6 +975,8 @@ async function renderArtiScenarios(version) {
           artiOpportunity(r.opportunity_id);
       }),
   );
+  appendTalentScenarios(d);
+  appendMoneyScenarios();
   $("#arti-reset").onclick = () => {
     modal(
       "Restaurar datos de demostración",
@@ -969,29 +1016,60 @@ function artiTick() {
   });
 }
 setInterval(artiTick, 1000);
-function artiUploadMedia() {
+async function artiUploadMedia() {
+  const limits = await api("/api/arti/media_settings");
   modal(
     "Subir contenido",
-    "MediaStorageProvider mock · solo en este navegador",
-    `<form id="arti-upload-form"><div class="field"><label for="arti-file">Foto o video (hasta 8 MB)</label><input type="file" id="arti-file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" required></div>${field("Texto de publicación", "caption", "text", "Mi próximo escenario.", 'required maxlength="2200"')}<p class="legal">No se envía a un servidor. MOV se conserva como archivo de muestra; su reproducción depende del navegador. No hay transcoding ni antivirus reales.</p><p class="error"></p><div class="form-actions"><button type="submit" class="btn">Subir y publicar</button></div></form>`,
+    "Archivos guardados solo en este navegador",
+    `<form id="arti-upload-form"><div class="field"><label for="arti-file">Archivo (hasta ${Math.round(limits.maximum_bytes / 1048576)} MB)</label><input type="file" id="arti-file" accept="${limits.formats.join(",")}" required></div>${select(
+      "Visibilidad",
+      "visibility",
+      [
+        "PUBLIC",
+        "FOLLOWERS_ONLY",
+        "PRIVATE",
+        "ENTERPRISE_ONLY",
+        "ADMIN_ONLY",
+      ].map((v) => ({ value: v, label: v })),
+      "PUBLIC",
+    )}${field("Texto de publicación", "caption", "text", "Mi próximo escenario.", 'required maxlength="2200"')}<p class="legal">No se envía a un servidor. MOV se conserva como archivo de muestra; su reproducción depende del navegador. No hay transcoding ni antivirus reales.</p><p class="error"></p><div class="form-actions"><button type="submit" class="btn">Subir y publicar</button></div></form>`,
   );
   bindForm("#arti-upload-form", async (data) => {
     const file = $("#arti-file").files[0];
-    if (!file || file.size > 8388608)
-      throw Error("Selecciona un archivo de hasta 8 MB.");
-    const data_url = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(Error("No pudimos leer el archivo."));
-      reader.readAsDataURL(file);
-    });
+    if (!file || file.size > limits.maximum_bytes)
+      throw Error("El archivo supera el límite permitido.");
+    let duration = null;
+    if (file.type.startsWith("video/") || file.type.startsWith("audio/"))
+      duration = await new Promise((resolve) => {
+        const element = document.createElement(
+            file.type.startsWith("video/") ? "video" : "audio",
+          ),
+          url = URL.createObjectURL(file);
+        let timer;
+        const finish = (value) => {
+          clearTimeout(timer);
+          URL.revokeObjectURL(url);
+          resolve(value);
+        };
+        element.onloadedmetadata = () =>
+          finish(Number.isFinite(element.duration) ? element.duration : null);
+        element.onerror = () => finish(null);
+        timer = setTimeout(() => finish(null), 5000);
+        element.preload = "metadata";
+        element.src = url;
+      });
+    if (duration !== null && duration > limits.maximum_duration_seconds)
+      throw Error("El archivo supera la duración máxima permitida.");
+    const storage_key = await ArtiMedia.store.put(file);
     const result = await api("/api/arti/media", {
       caption: data.caption,
+      visibility: data.visibility,
       file: {
         name: file.name,
         mime_type: file.type,
         size: file.size,
-        data_url,
+        storage_key,
+        duration,
       },
     });
     toast(result.message);
@@ -1040,7 +1118,7 @@ function artiCalendar() {
       (_, i) => {
         const date = key + "-" + String(i + 1).padStart(2, "0"),
           events = d.events.filter((e) => e.start.startsWith(date));
-        return `<div class="arti-month-day"><span>${i + 1}</span>${events.map((e) => `<button data-event="${e.id}">${esc(e.title)}<small>${timeStr(e.start)} · ${artiStatus[e.status] || e.status}</small></button>`).join("")}</div>`;
+        return `<div class="arti-month-day"><span>${i + 1}</span>${events.map((e) => `<button data-event="${e.id}">${esc(e.title)}<small>${timeStr(e.start)} · ${artiStatus[e.status] || e.status}${e.cancellation ? " · compensación " + artiCash(e.cancellation.provider_compensation, e.currency) : ""}</small></button>`).join("")}</div>`;
       },
     ).join(
       "",
@@ -1056,7 +1134,8 @@ function artiCalendar() {
   artiTick();
 }
 async function artiAccounts() {
-  const d = await api("/api/arti/workspace");
+  ArtiTutorial.clear();
+  const d = await api("/api/arti/demo_accounts");
   modal(
     "Personajes de ARTI",
     "Todas las identidades son ficticias. Cada visitante tiene una copia independiente.",
@@ -1067,7 +1146,7 @@ async function artiAccounts() {
         .filter((u) => !u.suspended)
         .map((u) => ({
           value: u.email,
-          label: u.name + " · " + ArtiDomain.role(u),
+          label: u.name + " · " + (u.profession || ArtiDomain.role(u)),
         })),
       state.user.email,
     )}<p class="error"></p><div class="form-actions"><button class="btn" type="submit">Explorar como este personaje</button></div></form>`,

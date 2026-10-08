@@ -1,6 +1,18 @@
 /* Additive ARTI demo domain. All providers below are simulations; never money/GPS verification. */
 (function (root) {
   "use strict";
+  const payments =
+    typeof module !== "undefined"
+      ? require("./arti-payments.js")
+      : root.ArtiPayments;
+  const talent =
+    typeof module !== "undefined"
+      ? require("./arti-talent.js")
+      : root.ArtiTalent;
+  const access =
+    typeof module !== "undefined"
+      ? require("./arti-access.js")
+      : root.ArtiAccess;
   const copy = (v) => JSON.parse(JSON.stringify(v));
   const now = () => new Date().toISOString();
   const next = (list) => Math.max(0, ...list.map((x) => x.id || 0)) + 1;
@@ -222,6 +234,7 @@
           "ENTERPRISE_ONLY",
           "BOOKING_ONLY",
           "TEAM_ONLY",
+          "ADMIN_ONLY",
         ].includes(visibility)
       )
         fail("Visibilidad inválida.");
@@ -237,17 +250,38 @@
             "video/mp4",
             "video/webm",
             "video/quicktime",
+            "audio/mpeg",
+            "audio/wav",
+            "application/pdf",
           ].includes(d.file.mime_type) ||
-          num(d.file.size, 1, 8388608) < 1 ||
-          typeof d.file.data_url !== "string" ||
-          !d.file.data_url.startsWith("data:" + d.file.mime_type + ";base64,")
+          num(d.file.size, 1, 104857600) < 1 ||
+          (!d.file.storage_key &&
+            (typeof d.file.data_url !== "string" ||
+              !d.file.data_url.startsWith(
+                "data:" + d.file.mime_type + ";base64,",
+              )))
         )
           fail("Archivo inválido: foto o video de hasta 8 MB.");
       }
       return {
         demo: true,
-        id: "DEMO-MEDIA-" + Date.now(),
-        url: d.file?.data_url || d.url || "demo-stage.svg",
+        id:
+          "DEMO-MEDIA-" +
+          Date.now() +
+          "-" +
+          Math.random().toString(36).slice(2),
+        url: d.file?.storage_key
+          ? "arti-media://" + d.file.storage_key
+          : d.url || "demo-stage.svg",
+        storage_key: d.file?.storage_key || null,
+        size_bytes: d.file?.size || 0,
+        duration_seconds: d.file?.duration || null,
+        thumbnail_url: "demo-stage.svg",
+        cdn_url: d.file?.storage_key
+          ? "arti-media://" + d.file.storage_key
+          : null,
+        file_name: d.file?.name || "",
+        processing_status: "SIMULATED",
         mime_type: d.mime_type || "image/svg+xml",
         status: "READY",
         visibility: d.visibility || "PUBLIC",
@@ -298,6 +332,8 @@
     if (db.arti?.version === 1) {
       db.arti.settings.agency_share_of_commission_bps ??= 5000;
       db.arti.professional_posts ||= [];
+      talent.seed(db);
+      payments.initialize(db);
       return db.arti;
     }
     const base = new Intl.DateTimeFormat("en-CA", {
@@ -760,6 +796,8 @@
         ...mocks.insurance.issue(inv, a.settings),
       });
     }
+    talent.seed(db);
+    payments.initialize(db);
     return a;
   }
   function log(a, u, action, entity) {
@@ -787,7 +825,13 @@
   function participant(e, u) {
     if (
       role(u) !== "ADMIN" &&
-      ![e.owner_id, e.provider_id, e.performer_id, e.agency_id].includes(u.id)
+      ![
+        e.owner_id,
+        e.provider_id,
+        e.performer_id,
+        e.agency_id,
+        ...(e.settlement_splits || []).map((s) => s.provider_id),
+      ].includes(u.id)
     )
       fail("Esta operación pertenece a otros participantes.");
   }
@@ -808,10 +852,11 @@
     exclude = 0,
     offerId = 0,
     legacyExclude = 0,
+    callMinutes = null,
   ) {
     const a = ensure(db),
       call = new Date(
-        Date.parse(start) - a.settings.call_minutes * 60000,
+        Date.parse(start) - (callMinutes ?? a.settings.call_minutes) * 60000,
       ).toISOString(),
       over = (s, e) =>
         Date.parse(s) < Date.parse(end) && Date.parse(e) > Date.parse(call);
@@ -834,7 +879,8 @@
       a.events.some(
         (e) =>
           e.id !== exclude &&
-          e.performer_id === artist &&
+          (e.performer_id === artist ||
+            e.staffing_assignments?.some((s) => s.provider_id === artist)) &&
           !["CANCELLED", "SETTLED"].includes(e.status) &&
           over(e.call_time, e.end),
       ) ||
@@ -861,6 +907,7 @@
       terms: e.terms,
       due: day(e.end.slice(0, 10), e.terms),
       status: "ACCEPTED",
+      customer_paid: false,
       created_at: now(),
       demo: true,
     };
@@ -944,19 +991,179 @@
     if (!u || u.suspended) fail("Selecciona una cuenta demo activa.");
     const r = role(u),
       admin = r === "ADMIN";
+    a.media_settings ||= {
+      maximum_bytes: 8388608,
+      maximum_duration_seconds: 180,
+      formats: [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "video/mp4",
+        "video/webm",
+        "video/quicktime",
+        "audio/mpeg",
+        "audio/wav",
+        "application/pdf",
+      ],
+    };
+    if (p[0] === "media_settings") {
+      if (!write) return copy(a.media_settings);
+      if (!admin) fail("Solo Admin configura archivos.");
+      a.media_settings.maximum_bytes = num(data.maximum_bytes, 1024, 104857600);
+      a.media_settings.maximum_duration_seconds = num(
+        data.maximum_duration_seconds,
+        1,
+        3600,
+      );
+      log(a, u, "MEDIA_SETTINGS_UPDATED", null);
+      return { message: "Límites de archivos actualizados" };
+    }
+    if (p[0] === "asset") {
+      const asset = a.media.find((x) => x.id === p[1]);
+      const mediaAccess =
+        typeof module !== "undefined"
+          ? require("./arti-media.js")
+          : root.ArtiMedia;
+      if (!asset || !mediaAccess.allowed(db, asset, u))
+        fail("Archivo privado.");
+      return copy(asset);
+    }
+    const requiredPermission = access.apiPermission(url.pathname, write);
+    if (requiredPermission) access.assert(u, requiredPermission);
+    if (p[0] === "demo_accounts" && !write)
+      return {
+        users: db.users
+          .filter((x) => x.email.endsWith("@artivo.demo"))
+          .map(({ id, name, email, role, demo_role, suspended }) => ({
+            id,
+            name,
+            email,
+            role,
+            demo_role,
+            suspended,
+            profession:
+              db.artists
+                .find((p) => p.user_id === id)
+                ?.specialties.map((s) => s.name)
+                .join(" / ") || "",
+          })),
+      };
+    if (p[0] === "tutorial") {
+      a.tutorials ||= {};
+      const key =
+        String(u.id) +
+        ":" +
+        r +
+        ":" +
+        (data.module || url.searchParams.get("module") || "role");
+      const current = a.tutorials[key] || { status: "NOT_STARTED", step: 0 };
+      if (!write) return copy(current);
+      if (
+        !["NOT_STARTED", "IN_PROGRESS", "COMPLETED", "SKIPPED"].includes(
+          data.status,
+        )
+      )
+        fail("Estado de tutoría inválido.");
+      const limit = access.steps(u).length;
+      const step = num(data.step ?? 0, 0, Math.max(limit - 1, 0));
+      a.tutorials[key] = { status: data.status, step, updated_at: now() };
+      return copy(a.tutorials[key]);
+    }
+    if (p[0] === "conversation") {
+      a.conversations ||= [];
+      if (!p[1]) {
+        if (!write)
+          return a.conversations.filter((c) => c.participants.includes(u.id));
+        const other = db.users.find(
+          (x) => x.id === Number(data.user_id) && !x.suspended,
+        );
+        if (!other || other.id === u.id)
+          fail("Elige otro participante activo.");
+        let c = a.conversations.find(
+          (c) =>
+            c.participants.includes(u.id) && c.participants.includes(other.id),
+        );
+        if (!c) {
+          c = {
+            id: next(a.conversations),
+            participants: [u.id, other.id],
+            messages: [],
+          };
+          a.conversations.push(c);
+        }
+        return copy(c);
+      }
+      const c = a.conversations.find((c) => c.id === Number(p[1]));
+      if (!c || !c.participants.includes(u.id)) fail("Conversación privada.");
+      if (write) {
+        c.messages.push({
+          id: next(c.messages),
+          sender_id: u.id,
+          body: text(data.body, 3000),
+          at: now(),
+        });
+        notify(
+          a,
+          c.participants.find((id) => id !== u.id),
+          "Nuevo mensaje profesional en ARTI.",
+        );
+      }
+      return copy(c);
+    }
+    const monetary = payments.route(
+      db,
+      url.pathname,
+      write ? data : undefined,
+      u,
+    );
+    if (monetary) return monetary;
+    const extended = talent.route(
+      db,
+      url.pathname,
+      data && write ? data : undefined,
+      u,
+      conflict,
+    );
+    if (extended) return extended;
     if (p[0] === "workspace" && !write) {
       const events = a.events.filter(
         (e) =>
           admin ||
-          [e.owner_id, e.provider_id, e.performer_id, e.agency_id].includes(
-            u.id,
-          ),
+          [
+            e.owner_id,
+            e.provider_id,
+            e.performer_id,
+            e.agency_id,
+            ...(e.settlement_splits || []).map((s) => s.provider_id),
+          ].includes(u.id),
       );
       const ids = events.map((e) => e.id);
       return {
         role: r,
+        money: payments.workspace(db, u),
         settings: a.settings,
-        professional_posts: a.professional_posts,
+        taxonomy: a.taxonomy,
+        equipment: a.equipment.filter((e) => admin || e.owner_id === u.id),
+        talent_availability: (a.talent_availability || []).filter(
+          (x) => admin || x.user_id === u.id,
+        ),
+        penalty_rules: admin ? a.penalty_rules : [],
+        professional_posts: a.professional_posts.filter(
+          (p) =>
+            !p.media_url ||
+            (typeof module !== "undefined"
+              ? require("./arti-media.js")
+              : root.ArtiMedia
+            ).allowed(
+              db,
+              a.media.find((x) => x.url === p.media_url),
+              u,
+            ),
+        ),
+        community_follows: (a.community_follows || []).filter(
+          (x) => x.user_id === u.id,
+        ),
+        media_settings: a.media_settings,
         organizations: a.organizations,
         venues: a.venues,
         opportunities: a.opportunities
@@ -965,6 +1172,7 @@
           )
           .map((o) => ({
             ...o,
+            staffing_summary: talent.staffingSummary(db, o),
             slot_counts: o.dates.map((d) => ({
               date_id: d.id,
               booked: a.events.filter(
@@ -996,14 +1204,22 @@
         ),
         events: events.map((e) => ({
           ...e,
-          candidates: db.artists.map((p) => ({
-            artist_id: p.user_id,
-            available:
-              !db.users.find((u) => u.id === p.user_id)?.suspended &&
-              !conflict(db, p.user_id, e.start, e.end, e.id),
-            distance_km: 5 + (p.user_id % 10),
-            demo: true,
-          })),
+          candidates: db.artists
+            .filter((p) =>
+              talent.qualified(p, {
+                category_key: e.category_key,
+                skills: e.required_skills,
+                requires_certification: e.requires_certification,
+              }),
+            )
+            .map((p) => ({
+              artist_id: p.user_id,
+              available:
+                !db.users.find((u) => u.id === p.user_id)?.suspended &&
+                !conflict(db, p.user_id, e.start, e.end, e.id),
+              distance_km: 5 + (p.user_id % 10),
+              demo: true,
+            })),
         })),
         teams: a.teams.filter(
           (t) =>
@@ -1011,19 +1227,42 @@
             t.leader_id === u.id ||
             t.members.some((m) => m.user_id === u.id),
         ),
-        artists: db.artists,
-        users: db.users,
+        artists: db.artists.map((p) =>
+          admin || p.user_id === u.id
+            ? p
+            : {
+                ...p,
+                certifications: p.certifications?.map(
+                  ({ document, ...c }) => c,
+                ),
+              },
+        ),
+        users: admin
+          ? db.users
+          : db.users.map(({ id, name, role, demo_role, suspended }) => ({
+              id,
+              name,
+              role,
+              demo_role,
+              suspended,
+            })),
         credits: a.credits.filter((c) => admin || c.owner_id === u.id),
         invoices: a.invoices.filter((i) => ids.includes(i.event_id)),
-        ledger: a.ledger.filter((l) =>
-          ids.includes(get(a, "invoices", l.invoice_id).event_id),
-        ),
-        financing: a.financing.filter((f) =>
-          ids.includes(get(a, "invoices", f.invoice_id).event_id),
-        ),
-        insurance: a.insurance.filter((f) =>
-          ids.includes(get(a, "invoices", f.invoice_id).event_id),
-        ),
+        ledger: ["ADMIN", "ENTERPRISE"].includes(r)
+          ? a.ledger.filter((l) =>
+              ids.includes(get(a, "invoices", l.invoice_id).event_id),
+            )
+          : [],
+        financing: ["ADMIN", "ENTERPRISE"].includes(r)
+          ? a.financing.filter((f) =>
+              ids.includes(get(a, "invoices", f.invoice_id).event_id),
+            )
+          : [],
+        insurance: ["ADMIN", "ENTERPRISE"].includes(r)
+          ? a.insurance.filter((f) =>
+              ids.includes(get(a, "invoices", f.invoice_id).event_id),
+            )
+          : [],
         disputes: a.disputes.filter((d) => ids.includes(d.event_id)),
         notifications: a.notifications.filter((n) => n.user_id === u.id),
         audit: admin ? a.audit : a.audit.filter((x) => x.by === u.id),
@@ -1043,6 +1282,21 @@
       };
     }
     if (!write) fail("Ruta no disponible.");
+    if (p[0] === "community_follow") {
+      a.community_follows ||= [];
+      const other = db.users.find(
+        (x) => x.id === Number(data.user_id) && !x.suspended,
+      );
+      if (!other || other.id === u.id) fail("Perfil inválido.");
+      const i = a.community_follows.findIndex(
+        (x) => x.user_id === u.id && x.followed_id === other.id,
+      );
+      if (i >= 0) a.community_follows.splice(i, 1);
+      else a.community_follows.push({ user_id: u.id, followed_id: other.id });
+      return {
+        message: i >= 0 ? "Seguimiento actualizado" : "Siguiendo este perfil",
+      };
+    }
     if (p[0] === "social") {
       if (p.length === 1) {
         a.professional_posts.unshift({
@@ -1059,6 +1313,19 @@
         return { message: "Publicación profesional creada" };
       }
       const post = get(a, "professional_posts", p[1]);
+      if (
+        post.media_url &&
+        !(
+          typeof module !== "undefined"
+            ? require("./arti-media.js")
+            : root.ArtiMedia
+        ).allowed(
+          db,
+          a.media.find((x) => x.url === post.media_url),
+          u,
+        )
+      )
+        fail("Contenido privado.");
       if (p[2] === "comment") {
         post.comments.push({
           by: u.id,
@@ -1235,7 +1502,7 @@
       };
     }
     if (p[0] === "opportunities" && p.length === 1) {
-      if (!ownerRoles.includes(r))
+      if (!ownerRoles.includes(r) && !admin)
         fail("Esta cuenta no puede publicar oportunidades.");
       const currency = data.currency;
       if (!["USD", "DOP", "EUR"].includes(currency)) fail("Moneda inválida.");
@@ -1265,6 +1532,26 @@
         origin_id: u.id,
         title: text(data.title, 120),
         category: text(data.category, 60),
+        category_key: data.category_key || null,
+        payment_model: data.payment_model || "PROTECTED_V2",
+        service_id: data.service_id || data.category_key || "music:live",
+        booking_type:
+          data.booking_type ||
+          (talent.category(db, data.category_key)?.technical
+            ? "TECHNICAL_BOOKING"
+            : "MUSIC_BOOKING"),
+        call_minutes: num(
+          data.call_minutes ?? a.settings.call_minutes,
+          0,
+          1440,
+        ),
+        demand_type: data.demand_type || "INDIVIDUAL OPPORTUNITY",
+        required_skills: (data.required_skills || []).map((x) => text(x, 120)),
+        requires_certification:
+          !!data.requires_certification ||
+          !!talent.category(db, data.category_key)?.sensitive,
+        staffing: data.staffing || [],
+        operational_schedule: data.operational_schedule || {},
         city: venue.city,
         venue_id: venue.id,
         currency,
@@ -1281,6 +1568,30 @@
         created_at: now(),
         demo: true,
       };
+      if (
+        o.category_key &&
+        o.category_key !== "FULL_PRODUCTION" &&
+        !talent.category(db, o.category_key)?.enabled
+      )
+        fail("Categoría deshabilitada.");
+      if (
+        !Array.isArray(o.staffing) ||
+        o.staffing.some(
+          (x) =>
+            !talent.category(db, x.category_key)?.enabled ||
+            !Number.isSafeInteger(Number(x.quantity)) ||
+            Number(x.quantity) < 1 ||
+            Number(x.quantity) > 100,
+        )
+      )
+        fail("Plazas de staffing inválidas.");
+      o.staffing = o.staffing.map((x, i) => ({
+        id: i + 1,
+        category_key: x.category_key,
+        label: text(x.label || x.category_key, 120),
+        quantity: Number(x.quantity),
+        skills: x.skills || [],
+      }));
       if (Date.parse(o.deadline + "T23:59:59-04:00") < Date.now())
         fail("La fecha límite ya pasó.");
       a.opportunities.unshift(o);
@@ -1293,6 +1604,13 @@
       if (o.visibility !== "PUBLIC" && !admin && o.owner_id !== u.id)
         fail("Oportunidad privada.");
       const action = p[2];
+      if (
+        action === "apply" &&
+        o.category_key &&
+        o.category_key !== "FULL_PRODUCTION" &&
+        !talent.category(db, o.category_key)?.enabled
+      )
+        fail("Categoría deshabilitada.");
       if (action === "invite") {
         if (o.owner_id !== u.id) fail("Solo el solicitante invita.");
         const invited = db.users.find(
@@ -1358,6 +1676,27 @@
         const team = data.team_id ? get(a, "teams", data.team_id) : null;
         if (team && team.leader_id !== u.id)
           fail("Ese equipo no te pertenece.");
+        const profile = db.artists.find((p) => p.user_id === u.id);
+        if (
+          r === "ARTIST" &&
+          !o.staffing?.length &&
+          !talent.qualified(profile, {
+            category_key: o.category_key,
+            skills: o.required_skills,
+            requires_certification: o.requires_certification,
+          })
+        )
+          fail(
+            "Tu perfil no cumple categoría, habilidades o documentos verificados requeridos.",
+          );
+        if (
+          o.staffing?.length &&
+          r === "ARTIST" &&
+          profile?.entity_type === "INDIVIDUAL"
+        )
+          fail(
+            "Esta oportunidad requiere una propuesta de equipo, crew o agencia.",
+          );
         const f = {
           id: next(a.offers),
           opportunity_id: o.id,
@@ -1396,7 +1735,10 @@
         for (const id of ids) {
           const d = get({ dates: o.dates }, "dates", id),
             t = terms(o, f.rounds.at(-1), d);
-          if (r === "ARTIST" && conflict(db, u.id, t.start, t.end))
+          if (
+            r === "ARTIST" &&
+            conflict(db, u.id, t.start, t.end, 0, 0, 0, o.call_minutes)
+          )
             fail("Hay un conflicto de agenda en las fechas seleccionadas.");
           if (
             a.events.filter(
@@ -1511,7 +1853,10 @@
             role(db.users.find((x) => x.id === f.provider_id)) === "ARTIST"
               ? f.provider_id
               : null;
-          if (performer && conflict(db, performer, t.start, t.end, 0, f.id))
+          if (
+            performer &&
+            conflict(db, performer, t.start, t.end, 0, f.id, 0, o.call_minutes)
+          )
             fail("Conflicto de calendario.");
           created.push({
             id: next(a.events) + created.length,
@@ -1527,8 +1872,21 @@
             title: o.title,
             ...t,
             call_time: new Date(
-              Date.parse(t.start) - a.settings.call_minutes * 60000,
+              Date.parse(t.start) -
+                (o.call_minutes ?? a.settings.call_minutes) * 60000,
             ).toISOString(),
+            payment_model: o.payment_model,
+            service_id: o.service_id || "music:live",
+            booking_type: o.booking_type || "MUSIC_BOOKING",
+            category_key: o.category_key,
+            required_skills: o.required_skills || [],
+            requires_certification: o.requires_certification,
+            staffing_assignments: talent.assignments(o),
+            technical_stage: "PENDING",
+            operational_schedule: o.operational_schedule || {},
+            operational_minutes:
+              (Date.parse(t.end) - Date.parse(t.start)) / 60000 +
+              (o.call_minutes ?? a.settings.call_minutes),
             rate: last.rate,
             currency: o.currency,
             terms: o.terms,
@@ -1551,6 +1909,10 @@
         const credit = a.credits.find(
           (c) => c.owner_id === o.owner_id && c.currency === o.currency,
         );
+        if (o.payment_model === "PROTECTED_V2" && o.terms > 0 && !credit)
+          fail(
+            "Este plazo requiere crédito demo aprobado en la moneda del contrato.",
+          );
         if (credit && o.terms > 0) {
           const total = created.reduce((s, e) => s + e.rate, 0);
           if (
@@ -1562,6 +1924,10 @@
           created.forEach((e) => (e.credit_reserved = true));
         }
         a.events.push(...created);
+        created.forEach((e) => {
+          payments.register(db, e);
+          if (e.fee_snapshot) e.commission_bps = e.fee_snapshot.bps;
+        });
         f.status = "ACCEPTED";
         f.accepted_by = u.id;
         f.accepted_at = now();
@@ -1620,6 +1986,24 @@
       const e = get(a, "events", p[1]);
       participant(e, u);
       const action = p[2];
+      if (
+        e.payment_model === "PROTECTED_V2" &&
+        e.funds_status === "PAYMENT_REQUIRED" &&
+        ["arrival", "late", "setup", "start", "next"].includes(action)
+      )
+        fail("El cliente debe pagar para confirmar la reserva protegida.");
+      if (
+        e.booking_type === "TECHNICAL_BOOKING" &&
+        action === "start" &&
+        e.technical_stage !== "READY"
+      )
+        fail("Completa load-in, setup y soundcheck antes del show.");
+      if (
+        e.booking_type === "TECHNICAL_BOOKING" &&
+        action === "verify" &&
+        e.technical_stage !== "STRIKE_COMPLETED"
+      )
+        fail("Completa strike antes de verificar el servicio.");
       if (action === "clock") {
         e.demo_clock_at = new Date(
           Date.parse(
@@ -1640,11 +2024,27 @@
           u.id !== e.agency_id
         )
           fail("Solo el coordinador puede asignar.");
-        if (["SETTLED", "INVOICED", "SERVICE_VERIFIED"].includes(e.status))
+        if (
+          [
+            "CANCELLED",
+            "DISPUTED",
+            "SETTLED",
+            "INVOICED",
+            "SERVICE_VERIFIED",
+          ].includes(e.status)
+        )
           fail("El servicio ya fue verificado.");
         const artist =
           db.artists.find((x) => x.user_id === num(data.artist_id)) ||
           fail("Artista inválido.");
+        if (
+          !talent.qualified(artist, {
+            category_key: e.category_key,
+            skills: e.required_skills,
+            requires_certification: e.requires_certification,
+          })
+        )
+          fail("Profesión, habilidades o certificación incompatibles.");
         if (db.users.find((x) => x.id === artist.user_id)?.suspended)
           fail("Cuenta suspendida.");
         if (conflict(db, artist.user_id, e.start, e.end, e.id))
@@ -1684,10 +2084,12 @@
           created_at: now(),
           history: [],
           previous_status: e.status,
+          cancellation_snapshot: e.cancellation ? copy(e.cancellation) : null,
         };
         a.disputes.push(d);
         e.previous_status = e.status;
         e.status = "DISPUTED";
+        payments.afterEvent(db, e);
         log(a, u, "DISPUTE_OPENED", d.id);
         return { message: "Disputa abierta · liquidación detenida" };
       }
@@ -1711,7 +2113,13 @@
           });
         if (to === "ARRIVED")
           e.checkin = mocks.gps.locate(get(a, "venues", e.venue_id), "inside");
-        if (to === "SETUP_VERIFIED") e.setup = "VERIFIED";
+        if (to === "SETUP_VERIFIED") {
+          e.setup = "VERIFIED";
+          if (e.booking_type === "TECHNICAL_BOOKING")
+            e.technical_stage = "READY";
+        }
+        if (to === "COMPLETED" && e.booking_type === "TECHNICAL_BOOKING")
+          e.technical_stage = "STRIKE_COMPLETED";
         if (to === "INVOICED") invoice(a, e);
         if (to === "SETTLED")
           route(db, "/api/arti/invoice/" + invoice(a, e).id + "/pay", {}, u);
@@ -1746,7 +2154,12 @@
         ).toISOString();
         if (e.late_minutes) {
           e.penalty = {
-            fee: a.settings.late_fee,
+            fee:
+              a.penalty_rules?.find(
+                (rule) =>
+                  rule.category_key === e.category_key &&
+                  e.late_minutes >= rule.delay_minutes,
+              )?.fee ?? a.settings.late_fee,
             currency: e.currency,
             status: "WARNING",
             score_before: 98,
@@ -1787,7 +2200,12 @@
       } else if (action === "start") {
         if (!admin && ![e.provider_id, e.performer_id].includes(u.id))
           fail("Solo el proveedor inicia.");
-        if (!e.performer_id)
+        if (
+          e.staffing_assignments?.length &&
+          e.staffing_assignments.some((s) => !s.provider_id)
+        )
+          fail("Completa todas las plazas antes de iniciar el paquete.");
+        if (!e.performer_id && !e.staffing_assignments?.length)
           fail("Asigna un intérprete antes de iniciar el evento.");
         if (e.status !== "SETUP_VERIFIED")
           fail("El setup debe estar verificado.");
@@ -1805,6 +2223,7 @@
         e.status = "INVOICED";
         invoice(a, e);
       } else fail("Acción no disponible.");
+      payments.afterEvent(db, e);
       e.history.push({ status: e.status, by: u.id, at: now(), demo: true });
       log(a, u, "EVENT_" + action.toUpperCase(), e.id);
       return {
@@ -1946,6 +2365,7 @@
         if (e.penalty)
           e.penalty.status = d.status === "RESOLVED" ? "REVERSED" : "REVIEWED";
       }
+      payments.afterEvent(db, e);
       log(a, u, "DISPUTE_" + d.status, d.id);
       return { message: "Disputa actualizada" };
     }
@@ -1997,26 +2417,61 @@
       return { message: "Perfil profesional demo actualizado" };
     }
     if (p[0] === "media") {
-      if (r !== "ARTIST") fail("Solo un artista puede publicar portfolio.");
+      if (!access.can(u, "media.create"))
+        fail("Permiso de contenido requerido.");
+      if (
+        data.file &&
+        (!a.media_settings.formats.includes(data.file.mime_type) ||
+          data.file.size > a.media_settings.maximum_bytes ||
+          Number(data.file.duration || 0) >
+            a.media_settings.maximum_duration_seconds)
+      )
+        fail("Formato, tamaño o duración fuera de los límites.");
       const media = mocks.media.upload({
         url: data.url ? https(data.url) : undefined,
         file: data.file,
         mime_type: data.file?.mime_type || data.mime_type,
-        visibility: "PUBLIC",
+        visibility: data.visibility || "PUBLIC",
       });
-      if (data.file)
+      mocks.media.setVisibility(media, media.visibility);
+      media.event_id = data.event_id ? Number(data.event_id) : null;
+      media.team_id = data.team_id ? Number(data.team_id) : null;
+      if (data.file && r === "ARTIST")
         db.posts.unshift({
           id: next(db.posts),
           artist_id: u.id,
           media_url: media.url,
           media_type: data.file.mime_type.startsWith("video/")
             ? "VIDEO"
-            : "IMAGE",
+            : data.file.mime_type.startsWith("audio/")
+              ? "AUDIO"
+              : data.file.mime_type === "application/pdf"
+                ? "DOCUMENT"
+                : "IMAGE",
           caption: text(
             data.caption || "Mi portfolio · archivo local demo",
             2200,
           ),
           created_at: now().slice(0, 19).replace("T", " "),
+        });
+      if (data.file && r !== "ARTIST")
+        a.professional_posts.unshift({
+          id: next(a.professional_posts),
+          owner_id: u.id,
+          body: text(data.caption || "Novedad profesional", 2200),
+          media_url: media.url,
+          media_type: data.file.mime_type.startsWith("video/")
+            ? "VIDEO"
+            : data.file.mime_type.startsWith("audio/")
+              ? "AUDIO"
+              : data.file.mime_type === "application/pdf"
+                ? "DOCUMENT"
+                : "IMAGE",
+          likes: [],
+          comments: [],
+          saved: [],
+          created_at: now(),
+          demo: true,
         });
       a.media.push({ ...media, owner_id: u.id, created_at: now() });
       log(a, u, "MEDIA_UPLOADED", media.id);

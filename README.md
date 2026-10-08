@@ -12,7 +12,7 @@ La extensión conserva todos los módulos originales. Agrega **12 escenarios fun
 
 ```sh
 node scripts/seed_demo.cjs
-node --test tests/test_demo.cjs tests/test_arti.cjs
+node --test tests/test_*.cjs
 ```
 
 ## Demo pública: cliente y músico
@@ -104,7 +104,7 @@ La información financiera se consulta solo por su propietario. Las rutas de con
 ```sh
 python3 -m unittest discover -s tests -v
 python3 scripts/build_site.py
-node --test tests/test_demo.cjs
+node --test tests/test_*.cjs
 node --check web/app.js
 ```
 
@@ -143,3 +143,7 @@ Para operar con dinero real se necesita un proveedor con checkout alojado, webho
 El matching inicial utiliza ciudad, categoría, disponibilidad, presupuesto, rating y servicios completados. El radio se guarda en el perfil; el backend no tiene GPS ni cálculo de distancia real; la extensión Pages tiene GPS y distancias simuladas. Business comparte las capacidades del cliente y dispone de su dashboard; equipos, facturas y recurrencias están simulados en Pages; su integración con el backend queda para una fase posterior. El perfil admite una foto y enlace a video. El feed social ya permite publicaciones e interacciones; el backend todavía no tiene carga de archivos multimedia; la demo Pages admite archivos locales de hasta 8 MB. El chat inicial es de texto y actualización manual. Las reseñas iniciales son cliente → artista. Los reportes incluyen perfiles, publicaciones, reservas y mensajes a nivel API; la UI permite reportar perfiles y publicaciones y abrir disputas. Push, cotizaciones, contratos, retiros y analítica avanzada quedan pendientes.
 
 Para producción: migrar de `http.server` a un servidor de aplicación apropiado y una base como PostgreSQL, agregar migraciones versionadas, respaldos, TLS, correo, almacenamiento multimedia, observabilidad y límites distribuidos. La separación actual facilita esa evolución; SQLite y el rate limiter en memoria son adecuados para esta ejecución local, no para 100,000 usuarios.
+
+## Continuación ARTI
+
+La [ampliación incremental](docs/INCREMENTAL-DEMO.md) incorpora menús por rol, tutorías persistentes, 58 perfiles de talento, taxonomía editable, operación técnica, payouts programados, cancelación por timestamps exactos y archivos fuera del estado de negocio. [Demo pública](https://garykeyz.github.io/artivo/?view=demo). Todo el dinero, GPS, documentación y proveedores financieros son simulados.

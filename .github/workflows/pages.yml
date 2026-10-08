@@ -27,12 +27,13 @@ jobs:
         run: python3 scripts/build_site.py
       - name: JavaScript and demo tests
         run: |
+          for source in web/*.js; do node --check "$source"; done
           node --check web/app.js
           node --check web/feed.js
           node --check web/demo.js
           node --check web/arti-domain.js
           node --check web/arti-ui.js
-          node --test tests/test_demo.cjs tests/test_arti.cjs
+          node --test tests/test_*.cjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site

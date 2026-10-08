@@ -43,3 +43,17 @@ Las dos pestañas comparten IndexedDB dentro del mismo navegador, pero mantienen
 - Video de portfolio local: clip sintético H.264 de 4 segundos, 640×360, generado con el script Swift incluido. No representa una actuación real.
 
 - Se verificó Reset en la UI: volvió a 50 oportunidades y 100 eventos; también el reloj del escenario y la advertencia de retraso.
+
+## Continuación incremental — 8 de octubre de 2026
+
+- 49 pruebas Python y 57 pruebas JavaScript aprobadas (106 total).
+- Syntax check de todos los archivos `web/*.js`; build público desde seed independiente; `git diff --check` limpio.
+- Política exacta: 168h30m, 168h, 72h, 24h, cinco horas, offsets y timestamps locales del venue; 29h para hoy 15:00 → mañana 20:00.
+- Preview sin cancelación inmediata; cancelación idempotente, instancia aislada de serie, ledger equilibrado, splits con redondeo exacto, refund y compensación separados.
+- Pago no libera ingreso antes del servicio; payout semanal/quincenal/mensual, Fast Pay con quote, disputa bloquea fondos, batches y Fast Pay no cobran dos veces el mismo ingreso.
+- CUA: seis menús por rol, identidad y badges, inicio/reanudación/omisión de guía, filtros de audio y talentos técnicos, revisión de Fast Pay y cancelación, checkout con aceptación de política.
+- Viewports comprobados: 1440×900, 820×1180 y 390×844; los paneles revisados no tuvieron overflow horizontal.
+- Archivo PNG sintético subido como agencia con visibilidad privada: Blob cargado mediante object URL, publicación visible al propietario y oculta al cliente. Sin errores de consola en este recorrido.
+- Originales preservados: Python/SQLite, reservas y conversaciones anteriores, los doce escenarios originales y contabilidad histórica. La política Pages de reservas anteriores consulta el motor compartido; la API Python conserva su contrato existente.
+
+Son verificaciones de la demo, sin transacciones financieras, certificación documental, GPS ni servicios externos reales.

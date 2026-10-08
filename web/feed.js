@@ -12,6 +12,8 @@ async function loadFeed(version) {
     api("/api/artists?active=1"),
     state.boot.static_demo ? api("/api/arti/workspace") : Promise.resolve(null),
   ]);
+  if (state.boot.static_demo) await ArtiMedia.hydrate(result.posts);
+  if (workspace) await ArtiMedia.hydrate(workspace.professional_posts);
   if (version !== state.renderVersion) return;
   Object.assign(feedState, {
     posts: result.posts,
@@ -20,15 +22,30 @@ async function loadFeed(version) {
     artists,
     workspace,
   });
+  if (workspace) {
+    const role = workspace.role;
+    const score = (o) =>
+      role === "ENTERPRISE"
+        ? o.owner_id === state.user.id
+          ? 10
+          : 0
+        : role === "LEADER"
+          ? o.dates.length + o.quantity * 3
+          : role === "ARTIST"
+            ? (o.category === state.boot.profile?.category ? 10 : 0) +
+              (o.city === state.boot.profile?.city ? 5 : 0)
+            : o.dates.length;
+    workspace.opportunities.sort((a, b) => score(b) - score(a));
+  }
   renderFeed();
 }
 function postCard(p) {
   const own = p.artist_id === state.user.id;
   return `<article class="feed-post" id="post-${p.id}">
     <header class="post-head"><button class="post-author" data-feed-profile="${p.artist_id}"><img src="${esc(p.photo || "artist-placeholder.svg")}" alt=""><span><strong>${esc(p.stage_name)}</strong><small>${esc(p.category)} · ${esc(p.city)}</small></span></button><div class="post-head-actions">${!own ? `<button class="text-btn ${p.following ? "is-following" : ""}" data-post-follow="${p.id}" aria-label="${p.following ? "Dejar de seguir" : "Seguir"} a ${esc(p.stage_name)}">${p.following ? "Siguiendo" : "Seguir"}</button>` : ""}<button class="icon-btn" data-post-report="${p.id}" aria-label="Reportar publicación de ${esc(p.stage_name)}">${icon("more")}</button></div></header>
-    <div class="post-media">${p.media_type === "VIDEO" ? `<video src="${esc(p.media_url)}" poster="${esc(p.photo)}" controls playsinline preload="metadata" aria-label="Video de ${esc(p.stage_name)}"></video>` : `<img src="${esc(p.media_url)}" alt="Publicación de ${esc(p.stage_name)}" loading="lazy">`}<span class="post-availability"><span class="dot"></span>${p.active ? "Talento activo" : "Agenda bajo consulta"}</span></div>
+    <div class="post-media">${["AUDIO", "DOCUMENT"].includes(p.media_type) ? moneyMediaMarkup(p) : p.media_type === "VIDEO" ? `<video src="${esc(p.media_url)}" poster="${esc(p.photo)}" controls playsinline preload="metadata" aria-label="Video de ${esc(p.stage_name)}"></video>` : `<img src="${esc(p.media_url)}" alt="Publicación de ${esc(p.stage_name)}" loading="lazy">`}<span class="post-availability"><span class="dot"></span>${p.active ? "Talento activo" : "Agenda bajo consulta"}</span></div>
     <div class="post-body"><div class="post-actions"><button class="icon-btn ${p.liked ? "is-liked" : ""}" data-post-like="${p.id}" aria-label="${p.liked ? "Quitar me gusta" : "Me gusta"} · publicación ${p.id}" aria-pressed="${!!p.liked}">${icon("heart")}</button><button class="icon-btn" data-post-comments="${p.id}" aria-label="Comentarios · publicación ${p.id}">${icon("chat")}</button><button class="icon-btn" data-post-share="${p.id}" aria-label="Compartir · publicación ${p.id}">${icon("send")}</button><button class="icon-btn post-save ${p.saved ? "is-saved" : ""}" data-post-save="${p.id}" aria-label="${p.saved ? "Quitar de guardados" : "Guardar"} · publicación ${p.id}" aria-pressed="${!!p.saved}">${icon("bookmark")}</button></div>
-    <strong class="post-likes">${p.like_count} ${p.like_count === 1 ? "me gusta" : "me gusta"}</strong><p class="post-caption"><b>${esc(p.stage_name)}</b> ${esc(p.caption)}</p><button class="post-comment-link" data-post-comments="${p.id}">${p.comment_count ? "Ver " + p.comment_count + " comentario" + (p.comment_count === 1 ? "" : "s") : "Sé el primero en comentar"}</button><div class="post-book"><span><small>Desde</small> <strong>${money(p.rate)}</strong> <small>/ evento</small></span><button class="btn small ${state.user.role === "ARTIST" ? "light" : ""}" data-feed-profile="${p.artist_id}">${state.user.role === "ARTIST" ? "Ver perfil" : "Contratar"} ${icon("arrow")}</button></div></div></article>`;
+    <strong class="post-likes">${p.like_count} ${p.like_count === 1 ? "me gusta" : "me gusta"}</strong><p class="post-caption"><b>${esc(p.stage_name)}</b> ${esc(p.caption)}</p><button class="post-comment-link" data-post-comments="${p.id}">${p.comment_count ? "Ver " + p.comment_count + " comentario" + (p.comment_count === 1 ? "" : "s") : "Sé el primero en comentar"}</button><div class="post-book"><span><small>Desde</small> <strong>${money(p.rate)}</strong> <small>/ evento</small></span><button class="btn small ${state.user.role === "ARTIST" ? "light" : ""}" data-feed-profile="${p.artist_id}">${state.boot.static_demo ? { ARTIST: "Ver perfil", LEADER: "Invitar al equipo", AGENCY: "Proponer talento", ENTERPRISE: "Invitar", ADMIN: "Ver perfil", CLIENT: "Contratar" }[ArtiAccess.role(state.user)] : state.user.role === "ARTIST" ? "Ver perfil" : "Contratar"} ${icon("arrow")}</button></div></div></article>`;
 }
 function renderFeed() {
   const artist = state.user.role === "ARTIST";
@@ -36,10 +53,12 @@ function renderFeed() {
     ["all", "Para ti"],
     ["following", "Siguiendo"],
     ["saved", "Guardados"],
-    ...(artist ? [["mine", "Mis publicaciones"]] : []),
+    ...(artist || state.boot.static_demo
+      ? [["mine", "Mis publicaciones"]]
+      : []),
   ];
   $("#content").innerHTML =
-    `${head(artist ? "Tu talento se mueve." : "Descubre tu próximo momento.", artist ? "Comparte lo que haces. Conecta con nuevas oportunidades." : "Música, personas y experiencias que merecen compartirse.", `<button class="btn" id="feed-main-action">${icon(artist ? "plus" : "search")} ${artist ? "Crear publicación" : "Buscar artista"}</button>`)}
+    `${head(artist ? "Tu talento se mueve." : "Descubre tu próximo momento.", artist ? "Comparte lo que haces. Conecta con nuevas oportunidades." : "Talento, personas y experiencias que merecen compartirse.", `<button class="btn" id="feed-main-action">${icon(artist ? "plus" : "search")} ${artist ? "Crear publicación" : state.boot.static_demo ? "Crear publicación" : "Buscar artista"}</button>`)}
   <div class="feed-layout"><div class="feed-main"><section class="talent-stories" aria-label="Artistas activos">${feedState.artists.map((a) => `<button class="talent-story" data-feed-profile="${a.user_id}"><span class="story-ring"><img src="${esc(a.photo || "artist-placeholder.svg")}" alt=""></span><strong>${esc(a.stage_name.split(" ")[0])}</strong><small>${esc(a.category)}</small></button>`).join("")}</section><div class="feed-tabs" role="group" aria-label="Filtro del feed">${modeNames.map(([id, label]) => `<button data-feed-mode="${id}" class="${feedState.mode === id ? "active" : ""}">${label}</button>`).join("")}<span class="feed-label">TALENTO EN VIVO</span></div>${
     state.boot.static_demo
       ? `<section class="arti-feed-demand"><div class="section-head"><h3>La demanda también se mueve.</h3><button id="arti-feed-opportunities" class="text-btn">Ver todas ↗</button></div>${(
@@ -54,13 +73,23 @@ function renderFeed() {
       : ""
   }${
     state.boot.static_demo
-      ? `<section class="arti-professional-feed"><div class="section-head"><h3>La comunidad profesional</h3><button class="text-btn" id="arti-social-publish">Publicar ↗</button></div>${(
+      ? `<section class="arti-professional-feed"><div class="section-head"><h3>La comunidad profesional</h3><div><button class="text-btn" id="arti-social-publish">Publicar ↗</button><button class="text-btn" id="feed-upload-file">Subir archivo ↗</button></div></div>${(
           feedState.workspace?.professional_posts || []
         )
-          .slice(0, 3)
+          .filter(
+            (p) =>
+              feedState.mode === "all" ||
+              (feedState.mode === "mine" && p.owner_id === state.user.id) ||
+              (feedState.mode === "saved" && p.saved.includes(state.user.id)) ||
+              (feedState.mode === "following" &&
+                (feedState.workspace.community_follows || []).some(
+                  (f) => f.followed_id === p.owner_id,
+                )),
+          )
+          .slice(0, 20)
           .map(
             (p) =>
-              `<article class="panel"><div class="eyebrow">${esc(ArtiDomain.role(feedState.workspace.users.find((u) => u.id === p.owner_id)))}</div><h3>${esc(feedState.workspace.users.find((u) => u.id === p.owner_id)?.name)}</h3><p class="profile-text">${esc(p.body)}</p><div class="arti-event-actions"><button class="text-btn" data-social-like="${p.id}">♡ ${p.likes.length} Me gusta</button><button class="text-btn" data-social-comment="${p.id}">Comentar (${p.comments.length})</button><button class="text-btn" data-social-save="${p.id}">Guardar</button>${["CLIENT", "ENTERPRISE", "LEADER", "AGENCY"].includes(ArtiDomain.role(state.user)) ? `<button class="text-btn" data-social-convert="${p.id}">Convertir en oportunidad ↗</button>` : ""}</div></article>`,
+              `<article class="panel"><div class="eyebrow">${esc(ArtiDomain.role(feedState.workspace.users.find((u) => u.id === p.owner_id)))}</div><h3>${esc(feedState.workspace.users.find((u) => u.id === p.owner_id)?.name)}</h3><p class="profile-text">${esc(p.body)}</p>${p.media_url ? moneyMediaMarkup(p) : ""}<div class="arti-event-actions"><button class="text-btn" data-social-like="${p.id}">♡ ${p.likes.length} Me gusta</button><button class="text-btn" data-social-comment="${p.id}">Comentar (${p.comments.length})</button><button class="text-btn" data-social-save="${p.id}">Guardar</button>${p.owner_id !== state.user.id ? `<button class="text-btn" data-social-follow="${p.owner_id}">Seguir</button><button class="text-btn" data-social-message="${p.owner_id}">Mensaje</button>` : ""}${["CLIENT", "ENTERPRISE", "LEADER", "AGENCY"].includes(ArtiDomain.role(state.user)) ? `<button class="text-btn" data-social-convert="${p.id}">Convertir en oportunidad ↗</button>` : ""}</div></article>`,
           )
           .join("")}</section>`
       : ""
@@ -86,6 +115,7 @@ function renderFeed() {
         artiOpportunity(Number(b.dataset.feedOpp));
       }),
   );
+  $("#feed-upload-file")?.addEventListener("click", artiUploadMedia);
   $("#arti-social-publish")?.addEventListener("click", artiSocialForm);
   for (const action of ["like", "save"])
     $$(`[data-social-${action}]`).forEach(
@@ -106,6 +136,21 @@ function renderFeed() {
           }
         }),
     );
+  $$("[data-social-follow]").forEach(
+    (b) =>
+      (b.onclick = async () => {
+        const r = await api("/api/arti/community_follow", {
+          user_id: Number(b.dataset.socialFollow),
+        });
+        toast(r.message);
+        await loadFeed(state.renderVersion);
+      }),
+  );
+  $$("[data-social-message]").forEach(
+    (b) =>
+      (b.onclick = () =>
+        openProfessionalConversation(Number(b.dataset.socialMessage))),
+  );
   $$("[data-social-comment]").forEach(
     (b) =>
       (b.onclick = () => artiSocialComment(Number(b.dataset.socialComment))),
@@ -121,9 +166,15 @@ function renderFeed() {
       }),
   );
   $("#feed-main-action").onclick = () =>
-    artist ? publishForm() : navigate("discover");
+    artist
+      ? publishForm()
+      : state.boot.static_demo
+        ? artiSocialForm()
+        : navigate("discover");
   $("#feed-side-action").onclick = () =>
-    navigate(artist ? "dashboard" : "discover");
+    navigate(
+      state.boot.static_demo ? "space" : artist ? "dashboard" : "discover",
+    );
   $$("[data-feed-mode]").forEach(
     (b) =>
       (b.onclick = async () => {
@@ -303,6 +354,7 @@ function renderDemoWelcome() {
   );
 }
 function demoInfo() {
+  if (state.boot.static_demo) return ArtiTutorial.helpMenu();
   modal(
     "Una demo para explorar.",
     "Explora Cliente, Artista, Líder, Empresa, Agencia y Admin.",

@@ -125,6 +125,10 @@
       reviews = db.reviews.filter((r) => r.artist_id === a.user_id);
     return {
       ...a,
+      certifications:
+        user?.id === a.user_id || user?.role === "ADMIN"
+          ? a.certifications
+          : a.certifications?.map(({ document, ...c }) => c),
       category: c.name,
       icon: c.icon,
       rating: reviews.length
@@ -161,6 +165,16 @@
   function post(db, postId, user) {
     const p = db.posts.find((p) => p.id === Number(postId));
     if (!p) throw Error("Publicación no encontrada.");
+    const asset = db.arti?.media.find((a) => a.url === p.media_url);
+    if (
+      asset &&
+      !(
+        typeof module !== "undefined"
+          ? require("./arti-media.js")
+          : window.ArtiMedia
+      ).allowed(db, asset, user)
+    )
+      throw Error("Contenido privado.");
     const a = profile(db, p.artist_id, user);
     return {
       ...p,
@@ -393,6 +407,8 @@
         "La demo pública se explora con las vistas de cliente y músico. Para crear cuentas reales, utiliza el backend.",
       );
     need(user);
+    if (route.startsWith("/api/admin") && user.role !== "ADMIN")
+      throw Error("Solo Admin puede acceder a administración.");
     if (route.startsWith("/api/arti/")) {
       if (route === "/api/arti/reset" && write) {
         if (!db._seed) throw Error("Reabre la demo para restaurar sus datos.");
@@ -433,12 +449,39 @@
         .filter(
           (a) =>
             (!params.q ||
-              [a.stage_name, a.city, a.category, a.genres, a.bio]
+              [
+                a.stage_name,
+                a.city,
+                a.category,
+                a.genres,
+                a.bio,
+                ...(a.specialties || []).map((s) => s.name),
+                ...(a.skills || []),
+              ]
                 .join(" ")
                 .toLowerCase()
                 .includes(params.q.toLowerCase())) &&
             (!params.category || a.category_id === Number(params.category)) &&
             (!params.city || a.city === params.city) &&
+            (!params.talent_category ||
+              a.primary_category === params.talent_category ||
+              a.specialties?.some(
+                (s) => s.category_key === params.talent_category,
+              )) &&
+            (!params.specialty ||
+              a.specialties?.some((s) => s.name === params.specialty)) &&
+            (!params.skill || a.skills?.includes(params.skill)) &&
+            (!params.experience ||
+              a.years_experience >= Number(params.experience)) &&
+            (!params.rating || a.demo_stats?.rating >= Number(params.rating)) &&
+            (!params.equipment || a.equipment_mode === params.equipment) &&
+            (!params.language ||
+              String(a.languages).includes(params.language)) &&
+            (!params.certified ||
+              a.certifications?.some(
+                (c) => c.verification_status === "VERIFIED_DEMO",
+              )) &&
+            (!params.enterprise_ready || a.enterprise_ready) &&
             (params.active !== "1" || a.active) &&
             (!params.budget || a.rate <= Number(params.budget)) &&
             (!params.start || free(db, a.user_id, params.start, params.end)),
@@ -491,6 +534,16 @@
         throw Error("Filtro no válido.");
       const posts = db.posts
         .filter((p) => !db.users.find((u) => u.id === p.artist_id).suspended)
+        .filter((p) => {
+          const asset = db.arti?.media.find((a) => a.url === p.media_url);
+          return (
+            !asset ||
+            (typeof module !== "undefined"
+              ? require("./arti-media.js")
+              : window.ArtiMedia
+            ).allowed(db, asset, user)
+          );
+        })
         .filter(
           (p) =>
             mode === "all" ||
@@ -608,6 +661,13 @@
           counter_amount: null,
           created_at: stamp(),
         };
+      (typeof module !== "undefined"
+        ? require("./arti-domain.js")
+        : window.ArtiDomain
+      ).ensure(db);
+      b.cancellation_policy = JSON.parse(
+        JSON.stringify(db.arti.money.settings.cancellation),
+      );
       db.bookings.push(b);
       audit(db, user, "REQUEST_CREATED", b.id);
       return booking(db, b.id, user);
@@ -744,15 +804,19 @@
           if (!client && !artist)
             throw Error("Solo los participantes pueden cancelar.");
           status(["PENDING", "COUNTER_OFFER", "PAYMENT_PENDING", "CONFIRMED"]);
-          if (
-            client &&
-            b.status === "CONFIRMED" &&
-            new Date(b.start + "-04:00") - Date.now() <
-              db.settings.free_cancel_hours * 3600000
-          )
-            throw Error(
-              "Abre una disputa para solicitar revisión de la cancelación.",
+          if (act === "cancel" && b.status === "CONFIRMED") {
+            (typeof module !== "undefined"
+              ? require("./arti-domain.js")
+              : window.ArtiDomain
+            ).route(
+              db,
+              "/api/arti/legacy_cancel/" + b.id,
+              { confirm: true },
+              user,
             );
+            audit(db, user, "CANCELLED", b.id);
+            return booking(db, b.id, user);
+          }
         }
         const payment = db.payments.find(
           (p) => p.booking_id === b.id && p.status === "HELD",
@@ -993,7 +1057,14 @@
           request.result.createObjectStore("state");
         request.onerror = () =>
           reject(Error("El navegador no permite guardar la demo."));
-        request.onsuccess = () => resolve({ database: request.result, seed });
+        request.onsuccess = async () => {
+          try {
+            await window.ArtiMedia.migrateLegacyBinary(request.result);
+            resolve({ database: request.result, seed });
+          } catch (error) {
+            reject(error);
+          }
+        };
       });
     })();
     return databasePromise;

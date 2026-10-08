@@ -271,20 +271,31 @@ async function startSession() {
   state.bookings = [];
   state.chatId = null;
   feedState.mode = "all";
-  state.page =
-    state.boot.static_demo &&
-    ["ENTERPRISE", "LEADER", "AGENCY", "ADMIN"].includes(
-      ArtiDomain.role(state.user),
-    )
-      ? "arti"
-      : state.user.role === "ARTIST"
-        ? "dashboard"
-        : state.user.role === "ADMIN"
-          ? "admin"
-          : "feed";
+  state.page = state.boot.static_demo
+    ? "space"
+    : state.user.role === "ARTIST"
+      ? "dashboard"
+      : state.user.role === "ADMIN"
+        ? "admin"
+        : "feed";
+  if (state.boot.static_demo) {
+    artiUI.tab = "overview";
+    artiUI.eventsFilter = "all";
+    artiUI.search = "";
+    artiUI.category = "";
+    artiUI.page = 0;
+    const requested = new URLSearchParams(location.search).get("page");
+    if (requested && ArtiAccess.route(state.user, requested))
+      state.page = requested;
+    else if (requested)
+      toast("Acceso denegado: ruta no disponible para tu rol.");
+  }
   await render();
+  if (state.boot.static_demo) await ArtiTutorial.welcome();
 }
 function navItems() {
+  if (state.boot.static_demo)
+    return roleNavigation().map((n) => [n.id, n.icon, n.label]);
   const artist = state.user.role === "ARTIST",
     admin = state.user.role === "ADMIN";
   return admin
@@ -321,6 +332,34 @@ function navItems() {
       ];
 }
 function mobileNav() {
+  if (state.boot.static_demo) {
+    const ids = [
+      "feed",
+      "space",
+      {
+        ARTIST: "opportunities",
+        LEADER: "teams",
+        ENTERPRISE: "events",
+        AGENCY: "offers",
+        ADMIN: "users",
+        CLIENT: "discover",
+      }[ArtiAccess.role(state.user)],
+      "messages",
+    ];
+    return (
+      ids
+        .map((id) => ArtiAccess.route(state.user, id))
+        .filter(Boolean)
+        .map(
+          (n) =>
+            `<button data-nav="${n.id}" class="${state.page === n.id ? "active" : ""}" aria-label="${n.label}">${icon(n.icon)}${n.id === "space" ? "Mi espacio" : n.label}</button>`,
+        )
+        .join("") +
+      '<button id="mobile-all" aria-label="Abrir menú">' +
+      icon("grid") +
+      "Menú</button>"
+    );
+  }
   const ids = state.boot.static_demo
     ? ["feed", "arti", "scenarios", "bookings", "profile"]
     : state.user.role === "ARTIST"
@@ -351,10 +390,11 @@ function mobileNav() {
 function viewSwitcher() {
   if (!state.boot.demo || !state.user.email.endsWith("@artivo.demo")) return "";
   if (state.boot.static_demo)
-    return `<div class="arti-role-switch"><button class="icon-btn" id="arti-accounts" title="Cambiar personaje demo" aria-label="Cambiar personaje demo">${icon("users")}</button><select id="arti-role" aria-label="Cambiar perspectiva demo">${artiRoles.map(([id, label]) => `<option value="${id}" ${ArtiDomain.role(state.user) === { cliente: "CLIENT", musico: "ARTIST", lider: "LEADER", empresa: "ENTERPRISE", agencia: "AGENCY", admin: "ADMIN" }[id] ? "selected" : ""}>${label}</option>`).join("")}</select></div>`;
+    return `<div class="arti-role-switch"><small class="demo-mode-label">DEMO MODE</small><button class="icon-btn" id="arti-accounts" title="Cambiar personaje demo" aria-label="Cambiar personaje demo">${icon("users")}</button><select id="arti-role" aria-label="Cambiar perspectiva demo">${artiRoles.map(([id, label]) => `<option value="${id}" ${ArtiDomain.role(state.user) === { cliente: "CLIENT", musico: "ARTIST", lider: "LEADER", empresa: "ENTERPRISE", agencia: "AGENCY", admin: "ADMIN" }[id] ? "selected" : ""}>${label}</option>`).join("")}</select></div>`;
   return `<div class="view-switch" role="group" aria-label="Vista de demostración"><button data-view="cliente">Cliente</button><button data-view="musico">Músico</button></div>`;
 }
 async function switchView(view) {
+  if (state.boot.static_demo) ArtiTutorial.clear();
   closeModal();
   try {
     $$("[data-view]").forEach((b) => (b.disabled = true));
@@ -375,13 +415,13 @@ function shell() {
   const nav = navItems(),
     item = nav.find((n) => n[0] === state.page) || nav[0];
   $("#app").innerHTML =
-    `<aside class="sidebar">${brand()}<div class="tagline">TALENTO EN MOVIMIENTO</div><div class="nav-label">TU ESPACIO</div><nav class="nav">${nav.map(([id, i, label]) => `<button data-nav="${id}" class="${id === state.page ? "active" : ""}" title="${esc(label)}" aria-label="${esc(label)}">${icon(i)}<span>${label}</span></button>`).join("")}</nav><div class="sidebar-bottom"><div class="pro-card">${icon("bolt")}<h4>${state.user.role === "ARTIST" ? "Tu talento, más lejos." : "Haz que sea inolvidable."}</h4><p>${state.user.role === "ARTIST" ? "Activa tu perfil y conecta con nuevas oportunidades." : "El artista perfecto para cada uno de tus momentos."}</p><button data-nav="${state.user.role === "ARTIST" ? "profile" : "discover"}">${state.user.role === "ARTIST" ? "Completar mi perfil" : "Explorar artistas"} ↗</button></div><div class="account"><div class="avatar">${esc(
+    `<aside class="sidebar">${brand()}<div class="tagline">TALENTO EN MOVIMIENTO</div><div class="nav-label">TU ESPACIO</div><nav class="nav">${state.boot.static_demo ? roleNavMarkup() : nav.map(([id, i, label]) => `<button data-nav="${id}" class="${id === state.page ? "active" : ""}" title="${esc(label)}" aria-label="${esc(label)}">${icon(i)}<span>${label}</span></button>`).join("")}</nav><div class="sidebar-bottom"><div class="pro-card">${icon("bolt")}<h4>${state.user.role === "ARTIST" ? "Tu talento, más lejos." : "Haz que sea inolvidable."}</h4><p>${state.user.role === "ARTIST" ? "Activa tu perfil y conecta con nuevas oportunidades." : "El artista perfecto para cada uno de tus momentos."}</p><button data-nav="${state.user.role === "ARTIST" ? "profile" : "discover"}">${state.user.role === "ARTIST" ? "Completar mi perfil" : "Explorar artistas"} ↗</button></div><div class="account"><div class="avatar">${esc(
       state.user.name
         .split(" ")
         .map((x) => x[0])
         .slice(0, 2)
         .join(""),
-    )}</div><div><strong>${esc(state.user.name)}</strong><small>${state.boot.static_demo ? { ARTIST: "Artista demo", CLIENT: "Cliente demo", ENTERPRISE: "Empresa demo", LEADER: "Líder demo", AGENCY: "Agencia demo", ADMIN: "Admin demo" }[ArtiDomain.role(state.user)] : { ARTIST: "Cuenta artista", CLIENT: "Cuenta cliente", BUSINESS: "ARTIVO Business", ADMIN: "Administrador" }[state.user.role]}</small></div><button id="logout" title="Cerrar sesión">${icon("logout")}</button></div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumb">Tu espacio <span>/</span> <b>${item[2]}</b></div><div class="mobile-brand">${brand()}</div><div class="top-actions">${viewSwitcher()}<span class="location">${icon("pin")} República Dominicana</span><button class="icon-btn" data-nav="${state.user.role === "ADMIN" ? "admin" : "messages"}" title="${state.user.role === "ADMIN" ? "Administración" : "Abrir mensajes"}">${icon(state.user.role === "ADMIN" ? "shield" : "chat")}</button><button class="icon-btn" data-nav="profile" title="Abrir perfil"><span class="avatar">${esc(state.user.name[0])}</span></button></div></header><main id="content" class="content"><div class="loading">Preparando tu espacio…</div></main></div><nav class="mobile-menu">${mobileNav()}</nav>${state.boot.static_demo ? '<div class="demo-banner"><span class="dot"></span>Demo · datos en este navegador <button class="text-btn" id="demo-info">Cómo funciona</button></div>' : ""}`;
+    )}</div><div><strong>${esc(state.user.name)}</strong><small>${state.boot.static_demo ? { ARTIST: "Artista demo", CLIENT: "Cliente demo", ENTERPRISE: "Empresa demo", LEADER: "Líder demo", AGENCY: "Agencia demo", ADMIN: "Admin demo" }[ArtiDomain.role(state.user)] : { ARTIST: "Cuenta artista", CLIENT: "Cuenta cliente", BUSINESS: "ARTIVO Business", ADMIN: "Administrador" }[state.user.role]}</small></div><button id="logout" title="Cerrar sesión">${icon("logout")}</button></div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumb">ARTI <span>/</span> ${state.boot.static_demo ? ArtiAccess.label(state.user) : "Tu espacio"} <span>/</span> <b>${item[2]}</b></div><div class="mobile-brand">${brand()}</div><div class="top-actions">${state.boot.static_demo ? `<div class="header-identity"><strong>${esc(state.user.name)}</strong><span class="role-badge">${ArtiAccess.label(state.user)}</span></div><button class="icon-btn" id="header-help" aria-label="¿Cómo funciona ARTI?">?</button>` : ""}${viewSwitcher()}<span class="location">${icon("pin")} República Dominicana</span><button class="icon-btn" data-nav="${state.user.role === "ADMIN" ? "admin" : "messages"}" title="${state.user.role === "ADMIN" ? "Administración" : "Abrir mensajes"}">${icon(state.user.role === "ADMIN" ? "shield" : "chat")}</button><button class="icon-btn" data-nav="profile" title="Abrir perfil"><span class="avatar">${esc(state.user.name[0])}</span></button></div></header><main id="content" class="content"><div class="loading">Preparando tu espacio…</div></main></div><nav class="mobile-menu">${mobileNav()}</nav>${state.boot.static_demo ? '<div class="demo-banner"><span class="dot"></span>Demo · datos en este navegador <button class="text-btn" id="demo-info">Cómo funciona</button></div>' : ""}`;
   $$("[data-nav]").forEach((b) => (b.onclick = () => navigate(b.dataset.nav)));
   $$("[data-view]").forEach(
     (b) => (b.onclick = () => switchView(b.dataset.view)),
@@ -390,7 +430,21 @@ function shell() {
   $("#arti-role")?.addEventListener("change", (e) =>
     switchView(e.target.value),
   );
-  $("#demo-info")?.addEventListener("click", demoInfo);
+  $("#demo-info")?.addEventListener(
+    "click",
+    state.boot.static_demo ? ArtiTutorial.helpMenu : demoInfo,
+  );
+  $("#header-help")?.addEventListener("click", ArtiTutorial.helpMenu);
+  $("#mobile-all")?.addEventListener("click", () => {
+    modal(
+      "Tu espacio",
+      ArtiAccess.label(state.user),
+      `<div class="compact-role-menu">${roleNavMarkup()}</div>`,
+    );
+    $$(".compact-role-menu [data-nav]").forEach(
+      (b) => (b.onclick = () => navigate(b.dataset.nav)),
+    );
+  });
   $("#logout").onclick = async () => {
     await api("/api/auth/logout", {});
     state.user = null;
@@ -400,6 +454,32 @@ function shell() {
   };
 }
 async function navigate(page) {
+  if (state.boot.static_demo) {
+    if (page === "arti")
+      page =
+        artiUI.tab === "overview"
+          ? "space"
+          : {
+              finance: {
+                ARTIST: "income",
+                LEADER: "income",
+                AGENCY: "commissions",
+                ENTERPRISE: "invoices",
+                CLIENT: "invoices",
+                ADMIN: "payments",
+              }[ArtiAccess.role(state.user)],
+              admin: "space",
+              journal: "help",
+            }[artiUI.tab] || artiUI.tab;
+    if (page === "dashboard") page = "space";
+    if (
+      !["legacy-bookings"].includes(page) &&
+      !ArtiAccess.route(state.user, page)
+    ) {
+      toast("Acceso denegado: este espacio no corresponde a tu rol.");
+      return;
+    }
+  }
   state.page = page;
   state.favorites = page === "favorites";
   closeModal();
@@ -410,7 +490,25 @@ async function render() {
   const version = ++state.renderVersion;
   shell();
   try {
-    if (state.boot.static_demo && state.page === "arti") {
+    if (state.boot.static_demo && state.page === "help") {
+      renderRoleHelp();
+    } else if (
+      state.boot.static_demo &&
+      ![
+        "feed",
+        "discover",
+        "favorites",
+        "profile",
+        "messages",
+        "scenarios",
+        "calendar",
+        "legacy-bookings",
+      ].includes(state.page)
+    ) {
+      await loadRoleWorkspace(version);
+    } else if (state.boot.static_demo && state.page === "calendar") {
+      await loadRoleWorkspace(version);
+    } else if (state.boot.static_demo && state.page === "arti") {
       await loadArti(version);
     } else if (state.boot.static_demo && state.page === "scenarios") {
       await renderArtiScenarios(version);
@@ -418,10 +516,14 @@ async function render() {
       await loadFeed(version);
     } else if (state.page === "discover" || state.page === "favorites") {
       await loadArtists();
+      if (state.boot.static_demo)
+        artiUI.data = await api("/api/arti/workspace");
       if (version !== state.renderVersion) return;
       renderDiscover();
     } else if (state.page === "profile") {
       renderProfile();
+      if (state.boot.static_demo && state.boot.profile)
+        addTalentProfileControls();
     } else if (state.page === "wallet") {
       const w = await api("/api/wallet");
       if (version !== state.renderVersion) return;
@@ -433,7 +535,8 @@ async function render() {
     } else {
       state.bookings = await api("/api/bookings");
       if (version !== state.renderVersion) return;
-      if (state.page === "bookings") renderBookings();
+      if (["bookings", "legacy-bookings"].includes(state.page))
+        renderBookings();
       else if (state.page === "messages") await renderMessages();
       else if (state.page === "calendar") {
         const slots = await api("/api/availability");
@@ -469,6 +572,7 @@ function card(a) {
     )}</div><div class="card-footer"><div class="price"><small>Desde</small><strong>${money(a.rate)}</strong> <span>/ evento</span></div><button class="btn light" data-artist="${a.user_id}">Ver perfil ${icon("arrow")}</button></div></div></article>`;
 }
 function renderDiscover() {
+  if (state.boot.static_demo) return renderTalentDiscover();
   const artists = state.favorites
     ? state.artists.filter((a) => a.favorite)
     : state.artists;
@@ -567,6 +671,7 @@ async function openArtist(id) {
     );
     $("#book-artist")?.addEventListener("click", () => requestArtist(a));
     $("#report-artist").onclick = () => reportForm("ARTIST", a.user_id);
+    if (state.boot.static_demo) addTalentProfileActions(a);
   } catch (e) {
     toast(e.message);
   }
@@ -664,6 +769,7 @@ async function openBooking(id) {
     if (!state.bookings.length) state.bookings = await api("/api/bookings");
     const b = state.bookings.find((b) => b.id === Number(id));
     if (!b) throw Error("Reserva no encontrada.");
+    if (state.boot.static_demo) artiUI.data = await api("/api/arti/workspace");
     const artist = state.user.id === b.artist_id,
       client = state.user.id === b.client_id;
     let actions = "";
@@ -703,7 +809,7 @@ async function openBooking(id) {
     modal(
       "Detalles de tu reserva",
       `Reserva #${b.id} · ${esc(b.title)}`,
-      `${badge(b)}<div class="panel"><div class="detail-grid"><div><small>ARTISTA</small><strong>${esc(b.artist_name)}</strong></div><div><small>CLIENTE</small><strong>${esc(b.client_name)}</strong></div><div><small>FECHA Y HORARIO</small><strong>${dateStr(b.start)}<br>${timeStr(b.start)} – ${timeStr(b.end)}</strong></div><div><small>UBICACIÓN DEL EVENTO</small><strong>${esc(b.city)} · ${esc(b.location)}</strong></div></div>${b.description ? `<p class="profile-text">${esc(b.description)}</p>` : ""}</div><div class="summary"><div class="line"><span>Precio del servicio</span><strong>${money(b.amount)}</strong></div>${b.counter_amount && b.status === "COUNTER_OFFER" ? `<div class="line"><span>Contraoferta del artista</span><strong>${money(b.counter_amount)}</strong></div>` : ""}<div class="line"><span>Comisión de plataforma (descontada al artista)</span><span>${money(b.commission)}</span></div><div class="line total"><span>${artist ? "Ingreso neto del artista" : "Total del cliente"}</span><strong>${money(artist ? b.amount - b.commission : b.amount)}</strong></div></div>${state.boot.demo ? '<div class="notice">Modo demostración: los pagos y la liberación de fondos son simulados. Puedes iniciar y completar el servicio antes de su fecha para probar el ciclo.</div>' : ""}<p class="legal">Cancelación gratuita del cliente hasta ${state.boot.free_cancel_hours} horas antes del evento. Las cancelaciones posteriores requieren revisión mediante disputa.</p><div class="actions">${actions}</div><div class="form-actions"><button class="btn light" id="booking-chat">${icon("chat")} Abrir conversación</button></div>`,
+      `${badge(b)}<div class="panel"><div class="detail-grid"><div><small>ARTISTA</small><strong>${esc(b.artist_name)}</strong></div><div><small>CLIENTE</small><strong>${esc(b.client_name)}</strong></div><div><small>FECHA Y HORARIO</small><strong>${dateStr(b.start)}<br>${timeStr(b.start)} – ${timeStr(b.end)}</strong></div><div><small>UBICACIÓN DEL EVENTO</small><strong>${esc(b.city)} · ${esc(b.location)}</strong></div></div>${b.description ? `<p class="profile-text">${esc(b.description)}</p>` : ""}</div><div class="summary"><div class="line"><span>Precio del servicio</span><strong>${money(b.amount)}</strong></div>${b.counter_amount && b.status === "COUNTER_OFFER" ? `<div class="line"><span>Contraoferta del artista</span><strong>${money(b.counter_amount)}</strong></div>` : ""}<div class="line"><span>Comisión de plataforma (descontada al artista)</span><span>${money(b.commission)}</span></div><div class="line total"><span>${artist ? "Ingreso neto del artista" : "Total del cliente"}</span><strong>${money(artist ? b.amount - b.commission : b.amount)}</strong></div></div>${state.boot.demo ? '<div class="notice">Modo demostración: los pagos y la liberación de fondos son simulados. Puedes iniciar y completar el servicio antes de su fecha para probar el ciclo.</div>' : ""}<p class="legal">${state.boot.static_demo ? artiUI.data.money.settings.cancellation.map((p) => `${p.max_hours >= 1000000 ? "Ventana restante" : `Hasta ${p.max_hours} horas`}: ${100 - p.penalty_bps / 100}% reembolso`).join(" · ") + ". Revisa el cálculo exacto antes de cancelar." : `Cancelación gratuita del cliente hasta ${state.boot.free_cancel_hours} horas antes del evento. Las cancelaciones posteriores requieren revisión mediante disputa.`}</p><div class="actions">${actions}</div><div class="form-actions"><button class="btn light" id="booking-chat">${icon("chat")} Abrir conversación</button></div>`,
     );
     $("#booking-chat").onclick = () => {
       state.chatId = b.id;
@@ -713,6 +819,20 @@ async function openBooking(id) {
       (button) =>
         (button.onclick = async () => {
           const act = button.dataset.action;
+          if (
+            act === "cancel" &&
+            state.boot.static_demo &&
+            b.status === "CONFIRMED"
+          ) {
+            const r = await api("/api/arti/legacy_cancel/" + b.id, {
+              confirm: false,
+            });
+            return moneyCancelReview(
+              r.event,
+              state.user.id === b.artist_id ? "PROVIDER" : "CLIENT",
+              b.id,
+            );
+          }
           if (act === "counter") {
             return bookingInput(
               b,
@@ -974,6 +1094,10 @@ function incomeForm() {
   });
 }
 async function renderMessages() {
+  if (state.boot.static_demo) {
+    await renderProfessionalMessages();
+    return;
+  }
   const list = state.bookings;
   if (!list.some((b) => b.id === state.chatId)) state.chatId = list[0]?.id;
   const b = list.find((b) => b.id === state.chatId);

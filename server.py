@@ -28,7 +28,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed=urlparse(self.path);path=parsed.path
         if not path.startswith('/api/'):
             if method!='GET': return self.send_json(405,{'error':'Método no permitido.'})
-            files={'/':'index.html','/app.js':'app.js','/feed.js':'feed.js','/arti-domain.js':'arti-domain.js','/arti-ui.js':'arti-ui.js','/style.css':'style.css','/favicon.svg':'favicon.svg','/artist-placeholder.svg':'artist-placeholder.svg'}
+            files={'/arti-media.js':'arti-media.js','/arti-conversations.js':'arti-conversations.js','/arti-payments.js':'arti-payments.js','/arti-payments-ui.js':'arti-payments-ui.js','/arti-talent.js':'arti-talent.js','/arti-talent-ui.js':'arti-talent-ui.js','/arti-access.js':'arti-access.js','/arti-workspace.js':'arti-workspace.js','/arti-tutorial.js':'arti-tutorial.js','/':'index.html','/app.js':'app.js','/feed.js':'feed.js','/arti-domain.js':'arti-domain.js','/arti-ui.js':'arti-ui.js','/style.css':'style.css','/favicon.svg':'favicon.svg','/artist-placeholder.svg':'artist-placeholder.svg'}
             name=files.get(path)
             if not name: return self.send_json(404,{'error':'No encontrado.'})
             content=(WEB/name).read_bytes();self.send_response(200)
