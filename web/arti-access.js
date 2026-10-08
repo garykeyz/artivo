@@ -544,7 +544,29 @@
       ),
     ],
   };
+  // Buyers discover supply; providers combine demand with their professional community.
+  const feedPolicy = (u) => {
+    const r = role(u),
+      hiring = ["CLIENT", "ENTERPRISE"].includes(r);
+    return {
+      hiring,
+      opportunities: !hiring,
+      primary: hiring ? "discover" : "publish",
+      title: hiring
+        ? "Encuentra el talento para tu evento."
+        : "Tu próximo trabajo empieza aquí.",
+      subtitle: hiring
+        ? "Descubre artistas, bandas, equipos y servicios. Conoce su trabajo y contrata."
+        : "Encuentra oportunidades y conecta con quienes hacen posible cada evento.",
+    };
+  };
+  const feedPostVisible = (viewer, author, mode = "all") =>
+    mode === "mine" ||
+    !feedPolicy(viewer).hiring ||
+    ["ARTIST", "LEADER", "AGENCY"].includes(role(author));
   const api = {
+    feedPolicy,
+    feedPostVisible,
     role,
     permissions,
     can,

@@ -48,3 +48,9 @@ La factura descargable es HTML marcado DEMO y puede imprimirse a PDF; no tiene v
 ## Continuación actual
 
 [Roles, talento universal, payouts, cancelación exacta y archivos](INCREMENTAL-DEMO.md). Incluye el recorrido de cliente, profesionales técnicos, paquetes, política oficial y controles de demostración.
+
+## Feed según la intención
+
+Clientes y empresas ven artistas, bandas, equipos y servicios para contratar. El feed prioriza el portfolio y excluye las publicaciones de otros clientes y empresas que buscan personal; las solicitudes propias siguen disponibles en Mis publicaciones. La acción principal abre la búsqueda de talento y servicios.
+
+Artistas, técnicos, líderes y agencias tienen un feed híbrido: oportunidades abiertas de otros contratantes y comunidad profesional. Pueden alternar entre Feed híbrido, Oportunidades y Comunidad y servicios. Siguiendo y Guardados mantienen sus filtros personales; cambiar de personaje restablece el feed.

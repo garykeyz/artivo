@@ -3922,3 +3922,27 @@ details summary {
     max-width: 100%;
   }
 }
+
+.feed-intent-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+}
+.feed-intent-tabs button {
+  border: 1px solid #dde5d8;
+  border-radius: 24px;
+  padding: 10px 15px;
+  background: white;
+  color: #52695e;
+  font: inherit;
+  cursor: pointer;
+}
+.feed-intent-tabs button.active {
+  background: #194f40;
+  color: white;
+  border-color: #194f40;
+}
+.arti-professional-feed {
+  margin-top: 24px;
+}

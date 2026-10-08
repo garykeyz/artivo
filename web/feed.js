@@ -1,12 +1,19 @@
 /* Hiring-oriented feed. Shares the same API, account and booking flow as the app. */
 const feedState = {
   mode: "all",
+  surface: "all",
+  viewerId: null,
   posts: [],
   hasMore: false,
   offset: 0,
   artists: [],
 };
 async function loadFeed(version) {
+  if (feedState.viewerId !== state.user.id) {
+    feedState.mode = "all";
+    feedState.surface = "all";
+    feedState.viewerId = state.user.id;
+  }
   const [result, artists, workspace] = await Promise.all([
     api("/api/feed?mode=" + feedState.mode),
     api("/api/artists?active=1"),
@@ -49,6 +56,25 @@ function postCard(p) {
 }
 function renderFeed() {
   const artist = state.user.role === "ARTIST";
+  const policy = ArtiAccess.feedPolicy(state.user);
+  const showCommunity = policy.hiring || feedState.surface !== "opportunities";
+  const professionalPosts = (
+    feedState.workspace?.professional_posts || []
+  ).filter((p) => {
+    const author = feedState.workspace.users.find((u) => u.id === p.owner_id);
+    return (
+      ArtiAccess.feedPostVisible(state.user, author, feedState.mode) &&
+      (feedState.mode === "all" ||
+        (feedState.mode === "mine" && p.owner_id === state.user.id) ||
+        (feedState.mode === "saved" &&
+          (p.saves || p.saved || []).includes(state.user.id)) ||
+        (feedState.mode === "following" &&
+          (feedState.workspace.community_follows || []).some(
+            (f) => f.followed_id === p.owner_id,
+          )))
+    );
+  });
+  const talentPosts = `<div id="feed-posts">${feedState.posts.map(postCard).join("") || empty(feedState.mode === "mine" ? "Tus publicaciones" : "Aquí empieza una buena conexión.", feedState.mode === "following" ? "Sigue perfiles para ver sus publicaciones aquí." : feedState.mode === "saved" ? "Guarda el talento y los servicios que te interesan." : policy.hiring ? "Explora perfiles para encontrar el servicio que necesita tu evento." : "Comparte una foto, un video o una muestra de tu trabajo.", "music")}</div>${feedState.hasMore ? '<button class="btn light feed-more" id="feed-more">Ver más publicaciones</button>' : ""}`;
   const modeNames = [
     ["all", "Para ti"],
     ["following", "Siguiendo"],
@@ -58,12 +84,29 @@ function renderFeed() {
       : []),
   ];
   $("#content").innerHTML =
-    `${head(artist ? "Tu talento se mueve." : "Descubre tu próximo momento.", artist ? "Comparte lo que haces. Conecta con nuevas oportunidades." : "Talento, personas y experiencias que merecen compartirse.", `<button class="btn" id="feed-main-action">${icon(artist ? "plus" : "search")} ${artist ? "Crear publicación" : state.boot.static_demo ? "Crear publicación" : "Buscar artista"}</button>`)}
-  <div class="feed-layout"><div class="feed-main"><section class="talent-stories" aria-label="Artistas activos">${feedState.artists.map((a) => `<button class="talent-story" data-feed-profile="${a.user_id}"><span class="story-ring"><img src="${esc(a.photo || "artist-placeholder.svg")}" alt=""></span><strong>${esc(a.stage_name.split(" ")[0])}</strong><small>${esc(a.category)}</small></button>`).join("")}</section><div class="feed-tabs" role="group" aria-label="Filtro del feed">${modeNames.map(([id, label]) => `<button data-feed-mode="${id}" class="${feedState.mode === id ? "active" : ""}">${label}</button>`).join("")}<span class="feed-label">TALENTO EN VIVO</span></div>${
-    state.boot.static_demo
-      ? `<section class="arti-feed-demand"><div class="section-head"><h3>La demanda también se mueve.</h3><button id="arti-feed-opportunities" class="text-btn">Ver todas ↗</button></div>${(
+    `${head(policy.title, policy.subtitle, `<button class="btn" id="feed-main-action">${icon(policy.hiring ? "search" : "plus")} ${policy.hiring ? "Buscar talento y servicios" : "Crear publicación"}</button>`)}
+  <div class="feed-layout"><div class="feed-main"><section class="talent-stories" aria-label="Talento y servicios activos">${feedState.artists.map((a) => `<button class="talent-story" data-feed-profile="${a.user_id}"><span class="story-ring"><img src="${esc(a.photo || "artist-placeholder.svg")}" alt=""></span><strong>${esc(a.stage_name.split(" ")[0])}</strong><small>${esc(a.category)}</small></button>`).join("")}</section><div class="feed-tabs" role="group" aria-label="Filtro del feed">${modeNames.map(([id, label]) => `<button data-feed-mode="${id}" class="${feedState.mode === id ? "active" : ""}">${label}</button>`).join("")}<span class="feed-label">${policy.hiring ? "PARA CONTRATAR" : "TU COMUNIDAD"}</span></div>${
+    state.boot.static_demo && !policy.hiring
+      ? `<div class="feed-intent-tabs" role="group" aria-label="Contenido profesional">${[
+          ["all", "Feed híbrido"],
+          ["opportunities", "Oportunidades"],
+          ["community", "Comunidad y servicios"],
+        ]
+          .map(
+            ([id, label]) =>
+              `<button class="${feedState.surface === id ? "active" : ""}" data-feed-surface="${id}">${label}</button>`,
+          )
+          .join("")}</div>`
+      : ""
+  }${
+    state.boot.static_demo &&
+    policy.opportunities &&
+    feedState.surface !== "community" &&
+    feedState.mode === "all"
+      ? `<section class="arti-feed-demand"><div class="section-head"><h3>Oportunidades para ofrecer tus servicios.</h3><button id="arti-feed-opportunities" class="text-btn">Ver todas ↗</button></div>${(
           feedState.workspace?.opportunities || []
         )
+          .filter((o) => o.status === "OPEN" && o.owner_id !== state.user.id)
           .slice(0, 3)
           .map(
             (o) =>
@@ -71,30 +114,18 @@ function renderFeed() {
           )
           .join("")}</section>`
       : ""
-  }${
-    state.boot.static_demo
-      ? `<section class="arti-professional-feed"><div class="section-head"><h3>La comunidad profesional</h3><div><button class="text-btn" id="arti-social-publish">Publicar ↗</button><button class="text-btn" id="feed-upload-file">Subir archivo ↗</button></div></div>${(
-          feedState.workspace?.professional_posts || []
-        )
-          .filter(
-            (p) =>
-              feedState.mode === "all" ||
-              (feedState.mode === "mine" && p.owner_id === state.user.id) ||
-              (feedState.mode === "saved" && p.saved.includes(state.user.id)) ||
-              (feedState.mode === "following" &&
-                (feedState.workspace.community_follows || []).some(
-                  (f) => f.followed_id === p.owner_id,
-                )),
-          )
+  }${showCommunity ? talentPosts : ""}${
+    state.boot.static_demo && showCommunity
+      ? `<section class="arti-professional-feed"><div class="section-head"><h3>${policy.hiring ? "Equipos y servicios para tu evento" : "La comunidad profesional"}</h3><div><button class="text-btn" id="arti-social-publish">Publicar ↗</button><button class="text-btn" id="feed-upload-file">Subir archivo ↗</button></div></div>${professionalPosts
           .slice(0, 20)
           .map(
             (p) =>
-              `<article class="panel"><div class="eyebrow">${esc(ArtiDomain.role(feedState.workspace.users.find((u) => u.id === p.owner_id)))}</div><h3>${esc(feedState.workspace.users.find((u) => u.id === p.owner_id)?.name)}</h3><p class="profile-text">${esc(p.body)}</p>${p.media_url ? moneyMediaMarkup(p) : ""}<div class="arti-event-actions"><button class="text-btn" data-social-like="${p.id}">♡ ${p.likes.length} Me gusta</button><button class="text-btn" data-social-comment="${p.id}">Comentar (${p.comments.length})</button><button class="text-btn" data-social-save="${p.id}">Guardar</button>${p.owner_id !== state.user.id ? `<button class="text-btn" data-social-follow="${p.owner_id}">Seguir</button><button class="text-btn" data-social-message="${p.owner_id}">Mensaje</button>` : ""}${["CLIENT", "ENTERPRISE", "LEADER", "AGENCY"].includes(ArtiDomain.role(state.user)) ? `<button class="text-btn" data-social-convert="${p.id}">Convertir en oportunidad ↗</button>` : ""}</div></article>`,
+              `<article class="panel"><div class="eyebrow">${esc(ArtiDomain.role(feedState.workspace.users.find((u) => u.id === p.owner_id)))}</div><h3>${esc(feedState.workspace.users.find((u) => u.id === p.owner_id)?.name)}</h3><p class="profile-text">${esc(p.body)}</p>${p.media_url ? moneyMediaMarkup(p) : ""}<div class="arti-event-actions"><button class="text-btn" data-social-like="${p.id}">♡ ${p.likes.length} Me gusta</button><button class="text-btn" data-social-comment="${p.id}">Comentar (${p.comments.length})</button><button class="text-btn" data-social-save="${p.id}">Guardar</button>${p.owner_id !== state.user.id ? `${policy.hiring ? `<button class="text-btn" data-social-hire="${p.owner_id}">Consultar servicio ↗</button>` : ""}<button class="text-btn" data-social-follow="${p.owner_id}">Seguir</button><button class="text-btn" data-social-message="${p.owner_id}">Mensaje</button>` : ""}${p.owner_id === state.user.id && ["CLIENT", "ENTERPRISE", "LEADER", "AGENCY"].includes(ArtiDomain.role(state.user)) ? `<button class="text-btn" data-social-convert="${p.id}">Convertir en oportunidad ↗</button>` : ""}</div></article>`,
           )
           .join("")}</section>`
       : ""
-  }<div id="feed-posts">${feedState.posts.map(postCard).join("") || empty(feedState.mode === "mine" ? "Tu escenario está listo." : "Aquí empieza una buena conexión.", feedState.mode === "following" ? "Sigue artistas para ver sus publicaciones aquí." : feedState.mode === "saved" ? "Guarda las publicaciones que te inspiran." : "Publica una foto o un video de tu talento.", "music")}</div>${feedState.hasMore ? '<button class="btn light feed-more" id="feed-more">Ver más publicaciones</button>' : ""}</div>
-  <aside class="feed-aside"><div class="feed-intro"><div class="eyebrow">${artist ? "TU ESPACIO CREATIVO" : "DE LA INSPIRACIÓN AL EVENTO"}</div><h2>${artist ? "Haz que te encuentren." : "El talento está aquí."}</h2><p>${artist ? "Muestra tu música y convierte cada publicación en una nueva oportunidad." : "Encuentra un artista que conecte con tu estilo y haz que tu evento cobre vida."}</p><button class="btn lime" id="feed-side-action">${artist ? "Ver mi actividad" : "Encontrar talento"} ${icon("arrow")}</button></div><div class="feed-suggestions"><div class="section-head"><h3>Talento activo</h3><span class="dot"></span></div>${feedState.artists
+  }</div>
+  <aside class="feed-aside"><div class="feed-intro"><div class="eyebrow">${!policy.hiring ? "TU ESPACIO PROFESIONAL" : "DE LA INSPIRACIÓN AL EVENTO"}</div><h2>${!policy.hiring ? "Conecta con tu próximo evento." : "El talento está aquí."}</h2><p>${!policy.hiring ? "Ofrece tus servicios, descubre demanda y colabora con otros profesionales." : "Artistas, bandas, producción y servicios: reúne el equipo que necesita tu evento."}</p><button class="btn lime" id="feed-side-action">${!policy.hiring ? "Ver oportunidades" : "Encontrar talento"} ${icon("arrow")}</button></div><div class="feed-suggestions"><div class="section-head"><h3>Talento activo</h3><span class="dot"></span></div>${feedState.artists
     .filter((a) => a.user_id !== state.user.id)
     .slice(0, 4)
     .map(
@@ -106,7 +137,7 @@ function renderFeed() {
     )}</div><p class="feed-footnote">ARTIVO · Talento activo. Bajo demanda.<br>${state.boot.static_demo ? "Demo compartible · Datos en este navegador" : state.boot.demo ? "Experiencia de demostración · Pagos de prueba" : "Tu talento, tu próxima conexión."}</p></aside></div>`;
   $("#arti-feed-opportunities")?.addEventListener("click", () => {
     artiUI.tab = "opportunities";
-    navigate("arti");
+    navigate("opportunities");
   });
   $$("[data-feed-opp]").forEach(
     (b) =>
@@ -166,19 +197,41 @@ function renderFeed() {
       }),
   );
   $("#feed-main-action").onclick = () =>
-    artist
-      ? publishForm()
-      : state.boot.static_demo
-        ? artiSocialForm()
-        : navigate("discover");
+    policy.hiring
+      ? navigate("discover")
+      : artist
+        ? publishForm()
+        : artiSocialForm();
   $("#feed-side-action").onclick = () =>
     navigate(
-      state.boot.static_demo ? "space" : artist ? "dashboard" : "discover",
+      policy.hiring
+        ? "discover"
+        : state.boot.static_demo
+          ? "opportunities"
+          : "dashboard",
     );
+  $$("[data-social-hire]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        const provider = feedState.artists.find(
+          (a) => a.user_id === Number(b.dataset.socialHire),
+        );
+        if (provider) openArtist(provider.user_id);
+        else openProfessionalConversation(Number(b.dataset.socialHire));
+      }),
+  );
+  $$("[data-feed-surface]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        feedState.surface = b.dataset.feedSurface;
+        renderFeed();
+      }),
+  );
   $$("[data-feed-mode]").forEach(
     (b) =>
       (b.onclick = async () => {
         feedState.mode = b.dataset.feedMode;
+        if (feedState.mode !== "all") feedState.surface = "community";
         try {
           await loadFeed(state.renderVersion);
         } catch (e) {
@@ -193,6 +246,7 @@ function renderFeed() {
       const r = await api(
         "/api/feed?mode=" + feedState.mode + "&offset=" + feedState.offset,
       );
+      if (state.boot.static_demo) await ArtiMedia.hydrate(r.posts);
       feedState.posts.push(...r.posts);
       feedState.offset = r.next_offset;
       feedState.hasMore = r.has_more;
