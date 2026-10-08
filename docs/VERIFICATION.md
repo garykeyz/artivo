@@ -21,3 +21,12 @@ Capturas de la demo de prueba:
 | Músico | [Ver](screenshots/musician-laptop.png) | [Ver](screenshots/musician-tablet.png) | [Ver](screenshots/musician-mobile.png) |
 
 Comprobado en navegador: publicar como músico y verlo como cliente; likes, seguir artistas, guardados y comentarios; persistencia al cambiar de vista. El sitio público es una demostración por navegador, con pagos simulados y sin cuentas reales.
+
+## Sitio publicado
+
+Verificado en `https://garykeyz.github.io/artivo/` con dos pestañas: el cliente creó una solicitud de RD$10,000; el músico la aceptó; el cliente confirmó el pago de prueba; el músico inició el servicio; el cliente confirmó la finalización y publicó su reseña. La cartera acreditó RD$9,000 netos adicionales, sin duplicar el movimiento.
+
+- [Vista pública del cliente](screenshots/public-client.png)
+- [Vista pública del músico](screenshots/public-musician.png)
+
+Las dos pestañas comparten IndexedDB dentro del mismo navegador, pero mantienen su vista por sesión. Otro navegador o dispositivo recibe una copia independiente.
