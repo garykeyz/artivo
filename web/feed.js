@@ -7,9 +7,10 @@ const feedState = {
   artists: [],
 };
 async function loadFeed(version) {
-  const [result, artists] = await Promise.all([
+  const [result, artists, workspace] = await Promise.all([
     api("/api/feed?mode=" + feedState.mode),
     api("/api/artists?active=1"),
+    state.boot.static_demo ? api("/api/arti/workspace") : Promise.resolve(null),
   ]);
   if (version !== state.renderVersion) return;
   Object.assign(feedState, {
@@ -17,6 +18,7 @@ async function loadFeed(version) {
     hasMore: result.has_more,
     offset: result.next_offset,
     artists,
+    workspace,
   });
   renderFeed();
 }
@@ -38,7 +40,31 @@ function renderFeed() {
   ];
   $("#content").innerHTML =
     `${head(artist ? "Tu talento se mueve." : "Descubre tu próximo momento.", artist ? "Comparte lo que haces. Conecta con nuevas oportunidades." : "Música, personas y experiencias que merecen compartirse.", `<button class="btn" id="feed-main-action">${icon(artist ? "plus" : "search")} ${artist ? "Crear publicación" : "Buscar artista"}</button>`)}
-  <div class="feed-layout"><div class="feed-main"><section class="talent-stories" aria-label="Artistas activos">${feedState.artists.map((a) => `<button class="talent-story" data-feed-profile="${a.user_id}"><span class="story-ring"><img src="${esc(a.photo || "artist-placeholder.svg")}" alt=""></span><strong>${esc(a.stage_name.split(" ")[0])}</strong><small>${esc(a.category)}</small></button>`).join("")}</section><div class="feed-tabs" role="group" aria-label="Filtro del feed">${modeNames.map(([id, label]) => `<button data-feed-mode="${id}" class="${feedState.mode === id ? "active" : ""}">${label}</button>`).join("")}<span class="feed-label">TALENTO EN VIVO</span></div><div id="feed-posts">${feedState.posts.map(postCard).join("") || empty(feedState.mode === "mine" ? "Tu escenario está listo." : "Aquí empieza una buena conexión.", feedState.mode === "following" ? "Sigue artistas para ver sus publicaciones aquí." : feedState.mode === "saved" ? "Guarda las publicaciones que te inspiran." : "Publica una foto o un video de tu talento.", "music")}</div>${feedState.hasMore ? '<button class="btn light feed-more" id="feed-more">Ver más publicaciones</button>' : ""}</div>
+  <div class="feed-layout"><div class="feed-main"><section class="talent-stories" aria-label="Artistas activos">${feedState.artists.map((a) => `<button class="talent-story" data-feed-profile="${a.user_id}"><span class="story-ring"><img src="${esc(a.photo || "artist-placeholder.svg")}" alt=""></span><strong>${esc(a.stage_name.split(" ")[0])}</strong><small>${esc(a.category)}</small></button>`).join("")}</section><div class="feed-tabs" role="group" aria-label="Filtro del feed">${modeNames.map(([id, label]) => `<button data-feed-mode="${id}" class="${feedState.mode === id ? "active" : ""}">${label}</button>`).join("")}<span class="feed-label">TALENTO EN VIVO</span></div>${
+    state.boot.static_demo
+      ? `<section class="arti-feed-demand"><div class="section-head"><h3>La demanda también se mueve.</h3><button id="arti-feed-opportunities" class="text-btn">Ver todas ↗</button></div>${(
+          feedState.workspace?.opportunities || []
+        )
+          .slice(0, 3)
+          .map(
+            (o) =>
+              `<button class="arti-feed-opportunity" data-feed-opp="${o.id}"><span>${icon("calendar")}</span><div><strong>${esc(o.title)}</strong><small>${esc(feedState.workspace.users.find((u) => u.id === o.owner_id)?.name)} · ${o.dates.length} fechas · ${artiCash(o.rate, o.currency)}/evento</small></div>${icon("arrow")}</button>`,
+          )
+          .join("")}</section>`
+      : ""
+  }${
+    state.boot.static_demo
+      ? `<section class="arti-professional-feed"><div class="section-head"><h3>La comunidad profesional</h3><button class="text-btn" id="arti-social-publish">Publicar ↗</button></div>${(
+          feedState.workspace?.professional_posts || []
+        )
+          .slice(0, 3)
+          .map(
+            (p) =>
+              `<article class="panel"><div class="eyebrow">${esc(ArtiDomain.role(feedState.workspace.users.find((u) => u.id === p.owner_id)))}</div><h3>${esc(feedState.workspace.users.find((u) => u.id === p.owner_id)?.name)}</h3><p class="profile-text">${esc(p.body)}</p><div class="arti-event-actions"><button class="text-btn" data-social-like="${p.id}">♡ ${p.likes.length} Me gusta</button><button class="text-btn" data-social-comment="${p.id}">Comentar (${p.comments.length})</button><button class="text-btn" data-social-save="${p.id}">Guardar</button>${["CLIENT", "ENTERPRISE", "LEADER", "AGENCY"].includes(ArtiDomain.role(state.user)) ? `<button class="text-btn" data-social-convert="${p.id}">Convertir en oportunidad ↗</button>` : ""}</div></article>`,
+          )
+          .join("")}</section>`
+      : ""
+  }<div id="feed-posts">${feedState.posts.map(postCard).join("") || empty(feedState.mode === "mine" ? "Tu escenario está listo." : "Aquí empieza una buena conexión.", feedState.mode === "following" ? "Sigue artistas para ver sus publicaciones aquí." : feedState.mode === "saved" ? "Guarda las publicaciones que te inspiran." : "Publica una foto o un video de tu talento.", "music")}</div>${feedState.hasMore ? '<button class="btn light feed-more" id="feed-more">Ver más publicaciones</button>' : ""}</div>
   <aside class="feed-aside"><div class="feed-intro"><div class="eyebrow">${artist ? "TU ESPACIO CREATIVO" : "DE LA INSPIRACIÓN AL EVENTO"}</div><h2>${artist ? "Haz que te encuentren." : "El talento está aquí."}</h2><p>${artist ? "Muestra tu música y convierte cada publicación en una nueva oportunidad." : "Encuentra un artista que conecte con tu estilo y haz que tu evento cobre vida."}</p><button class="btn lime" id="feed-side-action">${artist ? "Ver mi actividad" : "Encontrar talento"} ${icon("arrow")}</button></div><div class="feed-suggestions"><div class="section-head"><h3>Talento activo</h3><span class="dot"></span></div>${feedState.artists
     .filter((a) => a.user_id !== state.user.id)
     .slice(0, 4)
@@ -49,6 +75,51 @@ function renderFeed() {
     .join(
       "",
     )}</div><p class="feed-footnote">ARTIVO · Talento activo. Bajo demanda.<br>${state.boot.static_demo ? "Demo compartible · Datos en este navegador" : state.boot.demo ? "Experiencia de demostración · Pagos de prueba" : "Tu talento, tu próxima conexión."}</p></aside></div>`;
+  $("#arti-feed-opportunities")?.addEventListener("click", () => {
+    artiUI.tab = "opportunities";
+    navigate("arti");
+  });
+  $$("[data-feed-opp]").forEach(
+    (b) =>
+      (b.onclick = async () => {
+        artiUI.data = feedState.workspace;
+        artiOpportunity(Number(b.dataset.feedOpp));
+      }),
+  );
+  $("#arti-social-publish")?.addEventListener("click", artiSocialForm);
+  for (const action of ["like", "save"])
+    $$(`[data-social-${action}]`).forEach(
+      (b) =>
+        (b.onclick = async () => {
+          try {
+            const r = await api(
+              "/api/arti/social/" +
+                b.dataset[action === "like" ? "socialLike" : "socialSave"] +
+                "/" +
+                action,
+              {},
+            );
+            toast(r.message);
+            await loadFeed(state.renderVersion);
+          } catch (e) {
+            toast(e.message);
+          }
+        }),
+    );
+  $$("[data-social-comment]").forEach(
+    (b) =>
+      (b.onclick = () => artiSocialComment(Number(b.dataset.socialComment))),
+  );
+  $$("[data-social-convert]").forEach(
+    (b) =>
+      (b.onclick = () => {
+        artiUI.data = feedState.workspace;
+        artiCreateOpportunity();
+        $("#title").value = feedState.workspace.professional_posts
+          .find((p) => p.id === Number(b.dataset.socialConvert))
+          .body.slice(0, 120);
+      }),
+  );
   $("#feed-main-action").onclick = () =>
     artist ? publishForm() : navigate("discover");
   $("#feed-side-action").onclick = () =>
@@ -209,7 +280,7 @@ async function commentsModal(id) {
 function renderDemoWelcome() {
   state.renderVersion++;
   $("#app").innerHTML =
-    `<main class="preview-welcome"><header>${brand()}<a class="text-btn" href="${esc(window.ARTIVO_SOURCE_URL || "https://github.com/garykeyz/artivo")}" target="_blank" rel="noopener">Ver proyecto ↗</a></header><section class="welcome-copy"><div class="eyebrow">TALENTO ACTIVO. BAJO DEMANDA.</div><h1>Un talento.<br>Muchas posibilidades.</h1><p>Descubre artistas para tu próximo evento.<br>O convierte tu música en tu próxima oportunidad.</p><div class="welcome-views"><button data-welcome-view="cliente">${icon("user")}<strong>Soy cliente</strong><span>Descubre, conecta y reserva talento.</span>${icon("arrow")}</button><button data-welcome-view="musico">${icon("music")}<strong>Soy músico</strong><span>Publica, recibe reservas y gestiona tus ingresos.</span>${icon("arrow")}</button></div><p class="legal">Demo gratuita · Sin cobros reales · Los datos se guardan en este navegador.</p><div class="welcome-extra"><button class="text-btn" data-welcome-account="business">Ver Business</button><button class="text-btn" data-welcome-account="admin">Ver administración</button></div></section><footer>ARTIVO · República Dominicana · Talento en movimiento.</footer></main>`;
+    `<main class="preview-welcome"><header>${brand()}<a class="text-btn" href="${esc(window.ARTIVO_SOURCE_URL || "https://github.com/garykeyz/artivo")}" target="_blank" rel="noopener">Ver proyecto ↗</a></header><section class="welcome-copy"><div class="eyebrow">EXPLORE ARTI DEMO</div><h1>El talento.<br>Las personas.<br>Todo conectado.</h1><p>Descubre, contrata, coordina y paga talento para eventos.<br>Una demo funcional desde seis perspectivas.</p><div class="welcome-views arti-welcome-views">${artiRoles.map(([id, label]) => `<button data-welcome-view="${id}">${icon(id === "musico" ? "music" : id === "lider" ? "users" : id === "admin" ? "shield" : "user")}<strong>Entrar como ${label}</strong><span>${{ cliente: "Descubre y reserva talento.", musico: "Publica, negocia y realiza eventos.", lider: "Coordina tu equipo y sus fechas.", empresa: "Publica demanda y verifica servicios.", agencia: "Propón talento y recibe comisión.", admin: "Recorre escenarios, riesgo y métricas." }[id]}</span>${icon("arrow")}</button>`).join("")}</div><p class="legal">Demo gratuita · Datos ficticios en este navegador · Sin cobros ni cobertura reales.</p></section><footer>ARTI · La infraestructura profesional del entretenimiento.</footer></main>`;
   $$("[data-welcome-view]").forEach(
     (b) => (b.onclick = () => switchView(b.dataset.welcomeView)),
   );
@@ -234,8 +305,8 @@ function renderDemoWelcome() {
 function demoInfo() {
   modal(
     "Una demo para explorar.",
-    "Prueba las dos experiencias de ARTIVO.",
-    `<p class="profile-text">Alterna entre <b>Cliente</b> y <b>Músico</b> para recorrer una solicitud, su aceptación y un pago de prueba. También puedes publicar, comentar, guardar contenido y registrar gastos.</p><p class="profile-text">Los cambios se guardan en <b>este navegador</b>. Otras personas que abran el enlace tienen su propia copia de la demo. No hay cobros reales ni cuentas personales en esta versión pública.</p><p class="profile-text">El repositorio incluye la aplicación Python con su API y base de datos para alojar una versión con cuentas y datos compartidos.</p><div class="form-actions"><a class="btn light" href="${esc(window.ARTIVO_SOURCE_URL || "https://github.com/garykeyz/artivo")}" target="_blank" rel="noopener">Ver repositorio ↗</a></div>`,
+    "Explora Cliente, Artista, Líder, Empresa, Agencia y Admin.",
+    `<p class="profile-text">Alterna entre las seis perspectivas demo para recorrer una solicitud, su aceptación y un pago de prueba. Abre Escenarios para demostrar eventos, GPS, setup, facturas, factoring, seguros y Fast Pay. Todas esas operaciones son simulaciones. También puedes publicar, comentar, guardar contenido y registrar gastos.</p><p class="profile-text">Los cambios se guardan en <b>este navegador</b>. Otras personas que abran el enlace tienen su propia copia de la demo. No hay cobros reales ni cuentas personales en esta versión pública.</p><p class="profile-text">El repositorio incluye la aplicación Python con su API y base de datos para alojar una versión con cuentas y datos compartidos.</p><div class="form-actions"><a class="btn light" href="${esc(window.ARTIVO_SOURCE_URL || "https://github.com/garykeyz/artivo")}" target="_blank" rel="noopener">Ver repositorio ↗</a></div>`,
   );
 }
 

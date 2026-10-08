@@ -28,7 +28,7 @@ class Handler(BaseHTTPRequestHandler):
         parsed=urlparse(self.path);path=parsed.path
         if not path.startswith('/api/'):
             if method!='GET': return self.send_json(405,{'error':'Método no permitido.'})
-            files={'/':'index.html','/app.js':'app.js','/feed.js':'feed.js','/style.css':'style.css','/favicon.svg':'favicon.svg','/artist-placeholder.svg':'artist-placeholder.svg'}
+            files={'/':'index.html','/app.js':'app.js','/feed.js':'feed.js','/arti-domain.js':'arti-domain.js','/arti-ui.js':'arti-ui.js','/style.css':'style.css','/favicon.svg':'favicon.svg','/artist-placeholder.svg':'artist-placeholder.svg'}
             name=files.get(path)
             if not name: return self.send_json(404,{'error':'No encontrado.'})
             content=(WEB/name).read_bytes();self.send_response(200)

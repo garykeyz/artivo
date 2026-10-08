@@ -2,6 +2,10 @@
    This file is only enabled by the Pages build, never by the Python server.
    It deliberately offers no real authentication, payment or shared backend. */
 (function () {
+  const arti =
+    typeof window !== "undefined"
+      ? window.ArtiDomain
+      : require("./arti-domain.js");
   const sessionKey =
     "artivo.preview.user." +
     (typeof location !== "undefined" ? location.pathname : "test");
@@ -83,6 +87,18 @@
           s.artist_id === artist &&
           s.kind === "BLOCKED" &&
           overlaps(s.start, s.end, start, end),
+      ) &&
+      !(
+        db.arti &&
+        arti.conflict(
+          db,
+          artist,
+          start + "-04:00",
+          end + "-04:00",
+          0,
+          0,
+          exclude,
+        )
       ) &&
       !db.bookings.some(
         (b) =>
@@ -348,6 +364,7 @@
       },
     ];
     db.posts.forEach((p) => (p.created_at = stamp()));
+    db._seed = clone(seed);
     return db;
   }
   function dispatch(db, path, data, userId) {
@@ -376,6 +393,22 @@
         "La demo pública se explora con las vistas de cliente y músico. Para crear cuentas reales, utiliza el backend.",
       );
     need(user);
+    if (route.startsWith("/api/arti/")) {
+      if (route === "/api/arti/reset" && write) {
+        if (!db._seed) throw Error("Reabre la demo para restaurar sus datos.");
+        const settings = { ...db.settings },
+          rules = { ...arti.ensure(db).settings };
+        const fresh = initialize(db._seed);
+        Object.keys(db).forEach((k) => delete db[k]);
+        Object.assign(db, fresh);
+        db.settings = settings;
+        arti.ensure(db).settings = rules;
+        return {
+          message: "Demo restaurada · código y configuración conservados",
+        };
+      }
+      return arti.route(db, path, write ? data : undefined, user);
+    }
     if (route === "/api/bootstrap")
       return {
         user,
@@ -803,6 +836,12 @@
       need(user, "ARTIST");
       if (!write) return db.availability.filter((s) => s.artist_id === user.id);
       const [start, end] = range(data);
+      if (
+        data.kind === "BLOCKED" &&
+        db.arti &&
+        arti.conflict(db, user.id, start + "-04:00", end + "-04:00")
+      )
+        throw Error("Ese horario tiene una reserva o retención ARTI.");
       if (!["AVAILABLE", "BLOCKED"].includes(data.kind))
         throw Error("Tipo de horario inválido.");
       if (
@@ -834,6 +873,20 @@
       const slot = db.availability.find(
         (s) => s.id === Number(data.id) && s.artist_id === user.id,
       );
+      if (
+        slot &&
+        db.arti &&
+        db.arti.events.some(
+          (e) =>
+            e.performer_id === user.id &&
+            !["SETTLED", "CANCELLED"].includes(e.status) &&
+            Date.parse(e.call_time) < Date.parse(slot.end + "-04:00") &&
+            Date.parse(e.end) > Date.parse(slot.start + "-04:00"),
+        )
+      )
+        throw Error(
+          "No puedes quitar disponibilidad con eventos ARTI activos.",
+        );
       if (
         slot &&
         db.bookings.some(
@@ -946,6 +999,10 @@
     return databasePromise;
   }
   async function request(path, data) {
+    if (window.ARTI_DEMO_MODE === false)
+      throw Error(
+        "La demo está desactivada. Los proveedores reales no están configurados.",
+      );
     const { database, seed } = await open();
     return new Promise((resolve, reject) => {
       const tx = database.transaction("state", "readwrite"),
@@ -955,6 +1012,8 @@
       read.onsuccess = () => {
         try {
           const db = read.result || initialize(seed);
+          db._seed ||= clone(seed);
+          arti.ensure(db);
           result = dispatch(db, path, data, sessionStorage.getItem(sessionKey));
           if (path === "/api/auth/login")
             sessionStorage.setItem(sessionKey, result.id);

@@ -30,7 +30,9 @@ jobs:
           node --check web/app.js
           node --check web/feed.js
           node --check web/demo.js
-          node --test tests/test_demo.cjs
+          node --check web/arti-domain.js
+          node --check web/arti-ui.js
+          node --test tests/test_demo.cjs tests/test_arti.cjs
       - name: Configure Pages
         uses: actions/configure-pages@v5
       - name: Upload site

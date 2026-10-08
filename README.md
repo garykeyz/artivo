@@ -1,6 +1,19 @@
-# ARTIVO
+# ARTI / ARTIVO
 
 Aplicación web del MVP de contratación artística. Python 3.11+, SQLite y JavaScript nativo, sin paquetes externos. Interfaz adaptable a móvil y escritorio, en español y RD$.
+
+## Demo funcional ARTI ampliada
+
+[**Explorar ARTI**](https://garykeyz.github.io/artivo/?view=demo) · [Artista](https://garykeyz.github.io/artivo/?view=musico) · [Líder](https://garykeyz.github.io/artivo/?view=lider) · [Empresa](https://garykeyz.github.io/artivo/?view=empresa) · [Agencia](https://garykeyz.github.io/artivo/?view=agencia) · [Admin](https://garykeyz.github.io/artivo/?view=admin).
+
+La extensión conserva todos los módulos originales. Agrega **12 escenarios funcionales**, datos reproducibles (12 perfiles artistas, 5 líderes, 3 agencias, 5 empresas, 10 venues, 50 oportunidades, 100 eventos), negociación de precio/horario/condiciones, series y aceptación parcial, retenciones, equipos y sustituciones, calendario, GPS y setup simulados, facturas NET 30/60/90, ledger, crédito, factoring, seguro y Fast Pay ficticios. El cobro anticipado y el pago de la empresa son estados distintos; no duplican el payout. Las acciones persisten en la copia del visitante.
+
+[Guía para presentar en 5–10 minutos](docs/DEMO-GUIDE.md) · [Arquitectura A–Z y ERD](docs/architecture/ARTI-ARCHITECTURE.md). Navegación responsive, seis perspectivas, Journal, reset de datos demo que conserva configuración y providers mock con interfaces. Los módulos operativos nuevos están en el demo Pages; el backend Python/SQLite conserva su alcance original. No hay cobros, ubicación, crédito ni cobertura reales.
+
+```sh
+node scripts/seed_demo.cjs
+node --test tests/test_demo.cjs tests/test_arti.cjs
+```
 
 ## Demo pública: cliente y músico
 
@@ -127,6 +140,6 @@ Este MVP funciona localmente y demuestra el ciclo completo con pagos simulados. 
 
 Para operar con dinero real se necesita un proveedor con checkout alojado, webhooks verificados, idempotencia externa, reconciliación, payouts y manejo de fallos. No se solicitan ni almacenan datos de tarjetas. La recuperación de contraseña funciona en modo demo con un token temporal abierto en la misma interfaz; fuera de demo queda deshabilitada hasta conectar correo transaccional.
 
-El matching inicial utiliza ciudad, categoría, disponibilidad, presupuesto, rating y servicios completados. El radio se guarda en el perfil; no hay GPS ni cálculo de distancia todavía. Business comparte las capacidades del cliente y dispone de su dashboard; equipos, facturas, presupuestos y recurrencias quedan para la siguiente fase. El perfil admite una foto y enlace a video. El feed social ya permite publicaciones e interacciones; todavía no hay carga de archivos multimedia. El chat inicial es de texto y actualización manual. Las reseñas iniciales son cliente → artista. Los reportes incluyen perfiles, publicaciones, reservas y mensajes a nivel API; la UI permite reportar perfiles y publicaciones y abrir disputas. Push, cotizaciones, contratos, retiros y analítica avanzada quedan pendientes.
+El matching inicial utiliza ciudad, categoría, disponibilidad, presupuesto, rating y servicios completados. El radio se guarda en el perfil; el backend no tiene GPS ni cálculo de distancia real; la extensión Pages tiene GPS y distancias simuladas. Business comparte las capacidades del cliente y dispone de su dashboard; equipos, facturas y recurrencias están simulados en Pages; su integración con el backend queda para una fase posterior. El perfil admite una foto y enlace a video. El feed social ya permite publicaciones e interacciones; el backend todavía no tiene carga de archivos multimedia; la demo Pages admite archivos locales de hasta 8 MB. El chat inicial es de texto y actualización manual. Las reseñas iniciales son cliente → artista. Los reportes incluyen perfiles, publicaciones, reservas y mensajes a nivel API; la UI permite reportar perfiles y publicaciones y abrir disputas. Push, cotizaciones, contratos, retiros y analítica avanzada quedan pendientes.
 
 Para producción: migrar de `http.server` a un servidor de aplicación apropiado y una base como PostgreSQL, agregar migraciones versionadas, respaldos, TLS, correo, almacenamiento multimedia, observabilidad y límites distribuidos. La separación actual facilita esa evolución; SQLite y el rate limiter en memoria son adecuados para esta ejecución local, no para 100,000 usuarios.

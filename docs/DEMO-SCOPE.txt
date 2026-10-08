@@ -1,0 +1,1575 @@
+IMPORTANTE: NO REINICIES EL PROYECTO, NO BORRES LO QUE YA HAS CONSTRUIDO Y NO REEMPLACES LA ARQUITECTURA ACTUAL.
+
+Este mensaje es una REDIRECCIÓN DEL ALCANCE DEL DESARROLLO.
+
+El objetivo inmediato NO es construir todavía una plataforma de producción completa.
+
+Estamos construyendo un **DEMO FUNCIONAL Y NAVEGABLE DE ARTI** que permita demostrar visualmente y funcionalmente cómo funcionaría el producto completo.
+
+Debes conservar la arquitectura, componentes, módulos y decisiones que ya hayas implementado del prompt anterior, pero adaptar la ejecución para que:
+
+> TODO LO IMPORTANTE DE ARTI PUEDA SER DEMOSTRADO DENTRO DEL DEMO.
+
+No quiero solamente pantallas estáticas.
+
+Quiero flujos interactivos con datos ficticios, acciones funcionales, estados que cambien y ejemplos completos.
+
+============================================================
+1. OBJETIVO DEL DEMO
+============================================================
+
+El demo debe permitir que una persona entre a ARTI y pueda experimentar:
+
+ARTISTA
+→ crear perfil
+→ subir/ver contenido
+→ establecer precio
+→ configurar disponibilidad
+→ descubrir oportunidades
+→ negociar
+→ aceptar
+→ reservar fechas
+→ asistir al evento
+→ hacer check-in
+→ demostrar setup
+→ completar evento
+→ visualizar pago
+→ utilizar Fast Pay simulado
+
+LÍDER
+→ crear equipo
+→ agregar artistas
+→ recibir oportunidades
+→ negociar
+→ aceptar múltiples eventos
+→ asignar artistas
+→ administrar calendario
+→ sustituir artistas
+→ visualizar ingresos
+
+EMPRESA
+→ crear oportunidad
+→ contratar artista
+→ contratar líder
+→ contratar equipo
+→ publicar múltiples eventos
+→ negociar
+→ aprobar booking
+→ ver calendario
+→ ver facturas
+→ simular pago a 30/60/90 días
+
+AGENCIA / INTERMEDIARIO
+→ recibir oportunidad
+→ proponer artistas
+→ negociar
+→ gestionar bookings
+→ recibir comisión
+
+ADMIN ARTI
+→ visualizar todo
+→ gestionar usuarios
+→ gestionar eventos
+→ gestionar oportunidades
+→ revisar disputas
+→ revisar pagos
+→ revisar riesgo
+→ visualizar métricas
+
+============================================================
+2. NO ESPERAR INTEGRACIONES REALES
+============================================================
+
+Para el DEMO:
+
+NO esperar:
+
+- APIs bancarias
+- APIs de factoring
+- aseguradoras
+- procesadores de pago reales
+- servicios financieros reales
+- proveedores reales
+- almacenamiento cloud definitivo
+- sistemas externos
+
+Crear MOCK SERVICES / DEMO SERVICES.
+
+Pero construirlos mediante las mismas interfaces que utilizaría producción.
+
+Ejemplo:
+
+FinancingProvider
+
+Implementar:
+
+MockFinancingProvider
+
+InsuranceProvider
+
+Implementar:
+
+MockInsuranceProvider
+
+PaymentProvider
+
+Implementar:
+
+MockPaymentProvider
+
+MediaStorageProvider
+
+Implementar:
+
+MockMediaStorageProvider
+
+Esto permite demostrar el producto sin depender de terceros.
+
+============================================================
+3. DATOS DEMO
+============================================================
+
+Crear automáticamente una base de datos de DEMO DATA.
+
+No mostrar una aplicación vacía.
+
+Cuando se inicia el demo debe existir una plataforma viva.
+
+Crear como mínimo:
+
+10 artistas
+
+5 líderes
+
+3 bandas
+
+3 agencias/intermediarios
+
+5 empresas
+
+10 venues
+
+50 oportunidades
+
+100 eventos
+
+múltiples negociaciones
+
+múltiples bookings
+
+múltiples pagos
+
+múltiples facturas
+
+múltiples fechas disponibles
+
+múltiples eventos completados
+
+múltiples eventos futuros
+
+múltiples eventos atrasados
+
+múltiples disputas
+
+múltiples ejemplos de Fast Pay
+
+múltiples ejemplos de crédito
+
+múltiples ejemplos de factoring
+
+múltiples ejemplos de seguro
+
+============================================================
+4. PERSONAJES DEMO
+============================================================
+
+Crear perfiles claramente diferenciados.
+
+Ejemplo:
+
+ARTIST:
+
+Gary Keyz
+DJ / Pianist
+Punta Cana
+Desde US$250
+
+ARTIST:
+
+Maria Santos
+Singer
+Santo Domingo
+Desde US$180
+
+ARTIST:
+
+Alex Rivera
+Guitarist
+Punta Cana
+Desde US$150
+
+LEADER:
+
+Carlos Band Leader
+Leader
+5 musicians
+
+AGENCY:
+
+Caribbean Entertainment Agency
+
+ENTERPRISE:
+
+Grand Caribe Resort
+
+ENTERPRISE:
+
+Punta Cana Luxury Hotel
+
+ENTERPRISE:
+
+Caribbean Events Group
+
+VENUES:
+
+Grand Caribe Main Stage
+Beach Club
+Pool Venue
+Convention Center
+Lobby Piano Bar
+
+Los nombres pueden ser ficticios.
+
+============================================================
+5. DEMO ACCOUNTS
+============================================================
+
+Crear login rápido para demo.
+
+Pantalla:
+
+"EXPLORE ARTI DEMO"
+
+Botones:
+
+[ENTER AS ARTIST]
+
+[ENTER AS LEADER]
+
+[ENTER AS ENTERPRISE]
+
+[ENTER AS AGENCY]
+
+[ENTER AS ADMIN]
+
+No exigir registro para explorar el demo.
+
+Al seleccionar un rol, iniciar sesión automáticamente con un usuario demo.
+
+============================================================
+6. DEMO SWITCHER
+============================================================
+
+Agregar opcionalmente un:
+
+DEMO MODE SWITCHER
+
+en la navegación o menú de desarrollo.
+
+Ejemplo:
+
+Demo Role:
+
+ARTIST
+LEADER
+ENTERPRISE
+AGENCY
+ADMIN
+
+Esto permite al presentador cambiar de perspectiva rápidamente durante una demostración.
+
+No mostrarlo necesariamente a usuarios normales.
+
+============================================================
+7. ARTIST DEMO
+============================================================
+
+El perfil de artista debe mostrar:
+
+foto
+cover
+bio
+videos
+fotos
+géneros
+instrumentos
+experiencia
+precio desde
+ubicación
+disponibilidad
+rating
+punctuality score
+completed events
+
+Ejemplo:
+
+GARY KEYZ
+
+DJ / Pianist
+
+Punta Cana
+
+From:
+US$250
+
+Rating:
+4.9
+
+Punctuality:
+98%
+
+Completed:
+126 events
+
+Videos:
+
+[PLAY VIDEO]
+
+Posts:
+
+[VIEW PROFILE]
+
+============================================================
+8. MEDIA DEMO
+============================================================
+
+No quiero perfiles vacíos.
+
+Cada artista demo debe tener:
+
+- imágenes
+- thumbnails
+- videos demo
+- publicaciones
+- portfolio
+
+Si todavía no existe almacenamiento real, utilizar assets locales/mock assets.
+
+IMPORTANTE:
+
+La arquitectura debe seguir preparada para:
+
+Object Storage
++
+CDN
+
+pero el DEMO debe funcionar inmediatamente.
+
+============================================================
+9. FEED DEMO
+============================================================
+
+Crear un feed funcional.
+
+Mostrar:
+
+VIDEOS
+
+POSTS
+
+OPPORTUNITIES
+
+EVENT ANNOUNCEMENTS
+
+ARTISTS
+
+ENTERPRISE POSTS
+
+LEADER POSTS
+
+Ejemplo:
+
+"Grand Caribe Resort busca DJ para viernes y sábado."
+
+[VIEW OPPORTUNITY]
+
+Otro:
+
+"Maria Santos performing tonight."
+
+[VIEW PROFILE]
+
+Otro:
+
+"Caribbean Entertainment busca 5 músicos."
+
+[VIEW OPPORTUNITY]
+
+============================================================
+10. OPPORTUNITY DEMO
+============================================================
+
+Cada oportunidad debe ser completamente funcional.
+
+Ejemplo:
+
+DJ RESIDENCY
+
+Grand Caribe Resort
+
+Punta Cana
+
+Fridays & Saturdays
+
+20:00–00:00
+
+24 events
+
+US$250/event
+
+NET 90
+
+Requirements:
+
+Professional DJ
+Own controller
+English communication
+
+Botones:
+
+[ACCEPT]
+
+[NEGOTIATE]
+
+[DECLINE]
+
+============================================================
+11. NEGOCIACIÓN FUNCIONAL
+============================================================
+
+No crear solamente un modal visual.
+
+La negociación debe realmente modificar el estado.
+
+Ejemplo:
+
+Empresa:
+
+US$250
+
+Artista:
+
+US$300
+
+Empresa:
+
+US$275
+
+Artista:
+
+US$275 + transport
+
+Empresa:
+
+ACCEPT
+
+Resultado:
+
+NEGOTIATION ACCEPTED
+
+Agreed Rate:
+US$275
+
+Debe aparecer en:
+
+booking
+
+contract
+
+invoice
+
+calendar
+
+settlement
+
+============================================================
+12. NEGOCIACIÓN DE HORARIO
+============================================================
+
+Demostrar que no solamente se negocia dinero.
+
+Ejemplo:
+
+Empresa:
+
+20:00–00:00
+
+Artista:
+
+21:00–01:00
+
+Empresa:
+
+Accepted.
+
+Guardar:
+
+agreed_start_time
+agreed_end_time
+
+============================================================
+13. NEGOCIACIÓN DE VOLUMEN
+============================================================
+
+Crear ejemplo:
+
+1 event:
+US$300
+
+10 events:
+US$275
+
+24 events:
+US$250
+
+El artista/líder puede aceptar:
+
+ALL EVENTS
+
+PARTIAL EVENTS
+
+COUNTER OFFER
+
+============================================================
+14. MASS EVENTS DEMO
+============================================================
+
+Crear una oportunidad:
+
+"Hotel ABC necesita 24 DJs."
+
+Mostrar:
+
+24 EVENT SLOTS
+
+12 AVAILABLE
+
+8 BOOKED
+
+3 NEGOTIATING
+
+1 PENDING
+
+Permitir abrir la serie.
+
+Mostrar las fechas en calendario.
+
+============================================================
+15. DATE HOLD DEMO
+============================================================
+
+Cuando el artista seleccione una fecha:
+
+DATE HOLD
+
+Countdown:
+
+14:32
+
+"Your date is temporarily reserved while you complete the booking."
+
+Al aceptar:
+
+DATE CONFIRMED
+
+Al rechazar:
+
+DATE RELEASED
+
+============================================================
+16. LEADER DEMO
+============================================================
+
+Crear un líder:
+
+Carlos Rivera
+
+Team:
+
+Caribbean Live Band
+
+Members:
+
+Singer
+Piano
+Bass
+Drums
+Guitar
+
+Mostrar:
+
+TEAM CALENDAR
+
+UPCOMING EVENTS
+
+OPEN OPPORTUNITIES
+
+TEAM MEMBERS
+
+TEAM REVENUE
+
+============================================================
+17. LEADER MASS BOOKING
+============================================================
+
+El líder debe poder aceptar:
+
+"20 events"
+
+y posteriormente asignar:
+
+Event 1 → Carlos
+Event 2 → Maria
+Event 3 → Pedro
+
+etc.
+
+Mostrar claramente:
+
+ASSIGNED
+
+UNASSIGNED
+
+CONFLICT
+
+AVAILABLE
+
+============================================================
+18. ENTERPRISE DEMO
+============================================================
+
+Crear una empresa demo:
+
+GRAND CARIBE RESORT
+
+Dashboard:
+
+Credit Limit:
+US$50,000
+
+Credit Used:
+US$18,500
+
+Available:
+US$31,500
+
+Payment Terms:
+NET 90
+
+Outstanding:
+US$18,500
+
+Upcoming Events:
+24
+
+Active Providers:
+18
+
+============================================================
+19. CREAR OPORTUNIDAD DESDE EMPRESA
+============================================================
+
+La empresa debe poder pulsar:
+
+[CREATE OPPORTUNITY]
+
+Formulario:
+
+Title
+
+Category
+
+Venue
+
+Dates
+
+Time
+
+Call Time
+
+Budget
+
+Quantity
+
+Requirements
+
+Payment Terms
+
+Negotiation Allowed
+
+Contract Type
+
+Recurrence
+
+Submit
+
+Después de publicar:
+
+OPPORTUNITY PUBLISHED
+
+y debe aparecer en el marketplace/feed.
+
+============================================================
+20. APLICACIÓN A OPORTUNIDAD
+============================================================
+
+Un artista puede recibir:
+
+NEW OPPORTUNITY
+
+y pulsar:
+
+[APPLY]
+
+La empresa debe poder visualizar:
+
+Applicants
+
+Artist Profile
+
+Price
+
+Rating
+
+Punctuality
+
+Availability
+
+Videos
+
+y seleccionar:
+
+INVITE
+
+NEGOTIATE
+
+ACCEPT
+
+DECLINE
+
+============================================================
+21. EVENT COMMAND CENTER DEMO
+============================================================
+
+Crear un evento que pueda avanzar manualmente entre estados.
+
+Botón especial para demo:
+
+[NEXT EVENT STATE]
+
+Debe recorrer:
+
+BOOKING CONFIRMED
+
+→ UPCOMING
+
+→ CALL TIME
+
+→ ARRIVAL REQUIRED
+
+→ ARRIVED
+
+→ SETUP
+
+→ SETUP VERIFIED
+
+→ EVENT STARTED
+
+→ EVENT COMPLETED
+
+→ SERVICE VERIFIED
+
+→ INVOICE GENERATED
+
+→ PAID
+
+Esto es MUY importante para la presentación.
+
+============================================================
+22. COUNTDOWN DEMO
+============================================================
+
+Crear un evento demo:
+
+Event:
+20:00
+
+Call Time:
+19:00
+
+Mostrar:
+
+CALL TIME IN:
+
+00:17:32
+
+Luego poder avanzar artificialmente el reloj mediante:
+
+[SIMULATE ARRIVAL]
+
+[SIMULATE LATE ARRIVAL]
+
+[SIMULATE NO SHOW]
+
+No depender exclusivamente del reloj real durante la presentación.
+
+============================================================
+23. GPS DEMO
+============================================================
+
+Crear un modo:
+
+SIMULATED GPS
+
+Mostrar:
+
+Venue:
+Grand Caribe Resort
+
+Geofence:
+250m
+
+Artist location:
+
+OUTSIDE GEOFENCE
+
+Después:
+
+[SIMULATE ARRIVAL]
+
+Cambiar:
+
+INSIDE GEOFENCE
+
+GPS VERIFIED
+
+============================================================
+24. SETUP EVIDENCE DEMO
+============================================================
+
+Crear:
+
+UPLOAD SETUP EVIDENCE
+
+En el demo debe poder utilizar un asset de ejemplo.
+
+Después:
+
+SETUP SUBMITTED
+
+y mediante:
+
+[VERIFY SETUP]
+
+cambiar a:
+
+SETUP VERIFIED
+
+Mostrar:
+
+timestamp
+
+location
+
+booking
+
+event
+
+artist
+
+============================================================
+25. LATE ARRIVAL DEMO
+============================================================
+
+Crear un escenario de artista atrasado.
+
+Ejemplo:
+
+Call Time:
+19:00
+
+Actual:
+19:17
+
+Mostrar:
+
+LATE BY:
+
+17 MINUTES
+
+Status:
+
+⚠️ LATE
+
+Generar automáticamente:
+
+Penalty Warning
+
+y disminuir temporalmente:
+
+Punctuality Score
+
+Pero permitir:
+
+[OPEN DISPUTE]
+
+============================================================
+26. PENALTY DEMO
+============================================================
+
+Mostrar:
+
+Late Arrival
+
+Penalty:
+
+US$25
+
+Punctuality:
+
+98% → 96%
+
+Status:
+
+WARNING
+
+Debe existir:
+
+[DISPUTE PENALTY]
+
+============================================================
+27. NO-SHOW DEMO
+============================================================
+
+Crear un evento con:
+
+NO SHOW
+
+Mostrar:
+
+EVENT AT RISK
+
+[REQUEST SUBSTITUTE]
+
+El sistema debe mostrar artistas disponibles.
+
+============================================================
+28. REPLACEMENT DEMO
+============================================================
+
+Mostrar:
+
+Original Artist:
+Unavailable
+
+Replacement Candidates:
+
+Artist A
+Artist B
+Artist C
+
+Cada uno con:
+
+Price
+Distance
+Rating
+Availability
+Punctuality
+
+Botón:
+
+[ASSIGN REPLACEMENT]
+
+Al seleccionarlo:
+
+Booking updated.
+
+============================================================
+29. FACTORING DEMO
+============================================================
+
+Crear una factura demo:
+
+Invoice:
+INV-10024
+
+Enterprise:
+Grand Caribe Resort
+
+Amount:
+US$8,000
+
+Terms:
+NET 90
+
+Status:
+ACCEPTED
+
+Mostrar:
+
+FINANCING ELIGIBLE
+
+Partner:
+
+Demo Factoring Provider
+
+Advance:
+
+US$7,200
+
+Fee:
+
+US$180
+
+Botón:
+
+[SIMULATE FINANCING]
+
+Después:
+
+FINANCED
+
+============================================================
+30. INSURANCE DEMO
+============================================================
+
+Crear:
+
+Insurance Status:
+
+ACTIVE
+
+Coverage:
+
+US$8,000
+
+Coverage:
+90%
+
+Provider:
+
+Demo Credit Insurer
+
+Mostrar visualmente:
+
+CREDIT PROTECTED
+
+Esto es DEMO.
+
+No afirmar que existe cobertura real.
+
+============================================================
+31. FAST PAY DEMO
+============================================================
+
+Después de completar un evento:
+
+Gross:
+US$500
+
+Standard Payment:
+US$500
+
+Fast Pay:
+
+Receive now:
+US$490
+
+Fee:
+US$10
+
+Botón:
+
+[SIMULATE FAST PAY]
+
+Después:
+
+PAID TODAY
+
+============================================================
+32. PAYMENT DEMO
+============================================================
+
+Crear una simulación de pago.
+
+Estados:
+
+PENDING
+
+PROCESSING
+
+PAID
+
+FAILED
+
+OVERDUE
+
+El usuario debe poder avanzar mediante:
+
+[SIMULATE PAYMENT]
+
+============================================================
+33. INVOICE DEMO
+============================================================
+
+Generar factura visual.
+
+Mostrar:
+
+ARTI
+
+Invoice #INV-10024
+
+Enterprise:
+Grand Caribe Resort
+
+Service:
+Live Band
+
+Date:
+Oct 15
+
+Subtotal:
+US$8,000
+
+Payment Terms:
+NET 90
+
+Due:
+Jan 13
+
+Status:
+ACCEPTED
+
+[DOWNLOAD DEMO INVOICE]
+
+============================================================
+34. LEDGER DEMO
+============================================================
+
+Crear una vista simplificada:
+
+Invoice:
++US$8,000
+
+Provider payout:
+-US$5,000
+
+ARTI revenue:
++US$3,000
+
+Factoring:
+-US$180
+
+Fast Pay:
+-US$10
+
+Mostrar movimientos.
+
+============================================================
+35. DISPUTE DEMO
+============================================================
+
+Crear una disputa real dentro del demo.
+
+Ejemplo:
+
+Enterprise disputes:
+
+"Artist arrived late."
+
+Evidence:
+
+GPS
+timestamp
+setup photo
+
+Admin puede:
+
+OPEN
+
+REVIEW
+
+REQUEST EVIDENCE
+
+RESOLVE
+
+REJECT
+
+============================================================
+36. ADMIN DEMO
+============================================================
+
+Admin dashboard debe mostrar:
+
+Active Users
+Artists
+Enterprises
+Leaders
+Agencies
+Opportunities
+Bookings
+Events
+GMV
+Outstanding
+Financed
+Fast Pay
+Disputes
+Late Events
+No Shows
+
+Usar datos DEMO.
+
+============================================================
+37. DEMO SCENARIOS
+============================================================
+
+Crear un menú:
+
+DEMO SCENARIOS
+
+Scenario 1:
+Individual Artist Booking
+
+Scenario 2:
+Negotiation
+
+Scenario 3:
+24 Event Residency
+
+Scenario 4:
+Leader + Team
+
+Scenario 5:
+Enterprise Hiring
+
+Scenario 6:
+Late Artist
+
+Scenario 7:
+No Show + Replacement
+
+Scenario 8:
+NET 90 Invoice
+
+Scenario 9:
+Factoring
+
+Scenario 10:
+Fast Pay
+
+Scenario 11:
+Insurance
+
+Scenario 12:
+Mass Event Booking
+
+Al seleccionar un escenario:
+
+cargar datos correspondientes.
+
+============================================================
+38. DEMO RESET
+============================================================
+
+Agregar:
+
+[RESET DEMO]
+
+Debe restaurar todos los datos demo al estado inicial.
+
+No borrar código ni configuración.
+
+============================================================
+39. DEMO DATA SEED
+============================================================
+
+Crear seed reproducible.
+
+Comando:
+
+seedDemoData()
+
+Debe crear siempre el mismo escenario.
+
+============================================================
+40. DEMO MODE
+============================================================
+
+Crear:
+
+DEMO_MODE=true
+
+Cuando DEMO_MODE está activo:
+
+- usar mock payment
+- usar mock financing
+- usar mock insurance
+- usar simulated GPS
+- usar demo media
+- usar demo users
+- permitir avanzar estados manualmente
+
+Cuando:
+
+DEMO_MODE=false
+
+la arquitectura debe quedar preparada para servicios reales.
+
+============================================================
+41. MOCK PROVIDERS
+============================================================
+
+Implementar:
+
+MockPaymentProvider
+
+MockFinancingProvider
+
+MockInsuranceProvider
+
+MockMediaStorageProvider
+
+MockNotificationProvider
+
+MockGeolocationProvider
+
+No crear lógica duplicada.
+
+Los mocks deben implementar las mismas interfaces que producción.
+
+============================================================
+42. DEMO TOASTS / FEEDBACK
+============================================================
+
+Cada acción debe dar feedback.
+
+Ejemplos:
+
+"Offer sent"
+
+"Counter offer submitted"
+
+"Booking confirmed"
+
+"Date reserved"
+
+"GPS verified"
+
+"Setup submitted"
+
+"Setup verified"
+
+"Invoice generated"
+
+"Financing approved"
+
+"Fast Pay completed"
+
+"Payment simulated"
+
+"Penalty created"
+
+"Dispute opened"
+
+============================================================
+43. NO MOCK VISUAL SIN ESTADO
+============================================================
+
+IMPORTANTE:
+
+NO quiero botones falsos.
+
+Si un botón dice:
+
+ACCEPT
+
+debe cambiar el estado.
+
+Si dice:
+
+NEGOTIATE
+
+debe crear una negociación.
+
+Si dice:
+
+BOOK
+
+debe crear booking.
+
+Si dice:
+
+FAST PAY
+
+debe cambiar el payout.
+
+Si dice:
+
+FINANCE
+
+debe cambiar financing status.
+
+Si dice:
+
+CHECK IN
+
+debe registrar check-in.
+
+Si dice:
+
+VERIFY SETUP
+
+debe actualizar setup status.
+
+Todo debe ser funcional dentro del entorno demo.
+
+============================================================
+44. PRESENTACIÓN DEL DEMO
+============================================================
+
+El demo debe poder presentarse en aproximadamente:
+
+5–10 minutos.
+
+Crear una navegación clara.
+
+La persona que presenta debe poder mostrar:
+
+1. Perfil de artista
+2. Video
+3. Oportunidad
+4. Negociación
+5. Reserva
+6. Evento
+7. GPS
+8. Setup
+9. Completion
+10. Invoice
+11. Factoring
+12. Fast Pay
+13. Enterprise dashboard
+14. Leader dashboard
+15. Admin dashboard
+
+============================================================
+45. NO SOBRECONSTRUIR
+============================================================
+
+No implementar todavía:
+
+- infraestructura bancaria real
+- KYC real
+- seguros reales
+- contratos jurídicos definitivos
+- producción financiera real
+- procesamiento real de tarjetas
+- compliance bancario completo
+
+El objetivo es demostrar:
+
+PRODUCT EXPERIENCE
+
+y:
+
+BUSINESS MODEL
+
+mediante simulaciones funcionales.
+
+============================================================
+46. PRIORIDAD
+============================================================
+
+Si debes elegir entre:
+
+A) construir una función compleja parcialmente
+
+o:
+
+B) construir una simulación funcional y convincente
+
+para este DEMO:
+
+ELIGE B.
+
+Pero mantén la arquitectura preparada para producción.
+
+============================================================
+47. CRITERIO DE ÉXITO
+============================================================
+
+Cuando termine el desarrollo, alguien que nunca haya visto ARTI debe poder abrir el demo y entender inmediatamente:
+
+"ARTI conecta empresas, agencias, líderes y artistas."
+
+"Las empresas pueden publicar eventos."
+
+"Los artistas pueden aceptar o negociar."
+
+"Los líderes pueden gestionar equipos."
+
+"Se pueden contratar cientos de eventos."
+
+"Las fechas quedan reservadas."
+
+"ARTI verifica que el artista llegó."
+
+"ARTI verifica el setup."
+
+"Los incumplimientos generan consecuencias."
+
+"Las empresas pueden trabajar con crédito."
+
+"Las facturas pueden financiarse."
+
+"El artista puede cobrar antes."
+
+"Todo queda registrado."
+
+Ese debe ser el objetivo principal del DEMO.
+
+============================================================
+48. INSTRUCCIÓN FINAL
+============================================================
+
+CONTINÚA DESDE EL ESTADO ACTUAL DEL PROYECTO.
+
+NO REINICIES.
+
+NO BORRES.
+
+NO REEMPLACES.
+
+NO REESCRIBAS TODO.
+
+Integra estas capacidades encima de lo que ya has construido.
+
+Si alguna funcionalidad del prompt anterior es demasiado compleja para producción en este momento, conviértela en una implementación MOCK FUNCIONAL para el DEMO.
+
+Primero asegúrate de que exista:
+
+DEMO DATA
++
+DEMO ACCOUNTS
++
+DEMO SCENARIOS
++
+FUNCTIONAL STATE TRANSITIONS
++
+MOCK SERVICES
++
+RESET DEMO
+
+Después conecta progresivamente las funciones reales existentes.
+
+El resultado debe sentirse como un producto real, aunque las operaciones financieras, GPS, pagos, seguros y factoring sean simuladas.

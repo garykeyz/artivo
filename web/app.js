@@ -86,7 +86,7 @@ icons.send = '<path d="m22 2-7 20-4-9-9-4zM11 13 22 2"/>';
 const icon = (n) =>
   `<svg viewBox="0 0 24 24" aria-hidden="true">${icons[n] || icons.music}</svg>`;
 const brand = () =>
-  '<div class="brand"><span class="brand-mark">a</span><span class="brand-name">ARTIVO</span></div>';
+  '<div class="brand"><span class="brand-mark">a</span><span class="brand-name">ARTI</span></div>';
 const state = {
   user: null,
   boot: null,
@@ -272,11 +272,16 @@ async function startSession() {
   state.chatId = null;
   feedState.mode = "all";
   state.page =
-    state.user.role === "ARTIST"
-      ? "dashboard"
-      : state.user.role === "ADMIN"
-        ? "admin"
-        : "feed";
+    state.boot.static_demo &&
+    ["ENTERPRISE", "LEADER", "AGENCY", "ADMIN"].includes(
+      ArtiDomain.role(state.user),
+    )
+      ? "arti"
+      : state.user.role === "ARTIST"
+        ? "dashboard"
+        : state.user.role === "ADMIN"
+          ? "admin"
+          : "feed";
   await render();
 }
 function navItems() {
@@ -284,12 +289,24 @@ function navItems() {
     admin = state.user.role === "ADMIN";
   return admin
     ? [
+        ...(state.boot.static_demo
+          ? [
+              ["arti", "grid", "ARTI · Operación"],
+              ["scenarios", "bolt", "Escenarios demo"],
+            ]
+          : []),
         ["admin", "shield", "Administración"],
         ["bookings", "calendar", "Reservas"],
         ["profile", "user", "Mi cuenta"],
       ]
     : [
         ["feed", "home", "Inicio · Feed"],
+        ...(state.boot.static_demo
+          ? [
+              ["arti", "grid", "ARTI · Operación"],
+              ["scenarios", "bolt", "Escenarios demo"],
+            ]
+          : []),
         ...(artist ? [["dashboard", "grid", "Mi actividad"]] : []),
         ["discover", "compass", "Buscar artistas"],
         ["bookings", "calendar", artist ? "Mis reservas" : "Mis eventos"],
@@ -304,13 +321,16 @@ function navItems() {
       ];
 }
 function mobileNav() {
-  const ids =
-    state.user.role === "ARTIST"
+  const ids = state.boot.static_demo
+    ? ["feed", "arti", "scenarios", "bookings", "profile"]
+    : state.user.role === "ARTIST"
       ? ["dashboard", "feed", "bookings", "wallet", "profile"]
       : state.user.role === "ADMIN"
         ? ["admin", "bookings", "profile"]
         : ["feed", "discover", "bookings", "messages", "profile"];
   const labels = {
+    arti: "Operación",
+    scenarios: "Escenarios",
     dashboard: "Actividad",
     feed: state.user.role === "ARTIST" ? "Feed" : "Inicio",
     discover: "Buscar",
@@ -330,14 +350,16 @@ function mobileNav() {
 }
 function viewSwitcher() {
   if (!state.boot.demo || !state.user.email.endsWith("@artivo.demo")) return "";
-  return `<div class="view-switch" role="group" aria-label="Vista de demostración"><button data-view="cliente" class="${state.user.role === "CLIENT" ? "active" : ""}">${icon("user")}<span>Cliente</span></button><button data-view="musico" class="${state.user.role === "ARTIST" ? "active" : ""}">${icon("music")}<span>Músico</span></button></div>`;
+  if (state.boot.static_demo)
+    return `<div class="arti-role-switch"><button class="icon-btn" id="arti-accounts" title="Cambiar personaje demo" aria-label="Cambiar personaje demo">${icon("users")}</button><select id="arti-role" aria-label="Cambiar perspectiva demo">${artiRoles.map(([id, label]) => `<option value="${id}" ${ArtiDomain.role(state.user) === { cliente: "CLIENT", musico: "ARTIST", lider: "LEADER", empresa: "ENTERPRISE", agencia: "AGENCY", admin: "ADMIN" }[id] ? "selected" : ""}>${label}</option>`).join("")}</select></div>`;
+  return `<div class="view-switch" role="group" aria-label="Vista de demostración"><button data-view="cliente">Cliente</button><button data-view="musico">Músico</button></div>`;
 }
 async function switchView(view) {
   closeModal();
   try {
     $$("[data-view]").forEach((b) => (b.disabled = true));
     state.user = await api("/api/auth/login", {
-      email: (view === "musico" ? "gary" : "cliente") + "@artivo.demo",
+      email: (artiEmails[view] || "cliente") + "@artivo.demo",
       password: "Artivo2026!",
     });
     const u = new URL(location.href);
@@ -359,10 +381,14 @@ function shell() {
         .map((x) => x[0])
         .slice(0, 2)
         .join(""),
-    )}</div><div><strong>${esc(state.user.name)}</strong><small>${{ ARTIST: "Cuenta artista", CLIENT: "Cuenta cliente", BUSINESS: "ARTIVO Business", ADMIN: "Administrador" }[state.user.role]}</small></div><button id="logout" title="Cerrar sesión">${icon("logout")}</button></div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumb">Tu espacio <span>/</span> <b>${item[2]}</b></div><div class="mobile-brand">${brand()}</div><div class="top-actions">${viewSwitcher()}<span class="location">${icon("pin")} República Dominicana</span><button class="icon-btn" data-nav="${state.user.role === "ADMIN" ? "admin" : "messages"}" title="${state.user.role === "ADMIN" ? "Administración" : "Abrir mensajes"}">${icon(state.user.role === "ADMIN" ? "shield" : "chat")}</button><button class="icon-btn" data-nav="profile" title="Abrir perfil"><span class="avatar">${esc(state.user.name[0])}</span></button></div></header><main id="content" class="content"><div class="loading">Preparando tu espacio…</div></main></div><nav class="mobile-menu">${mobileNav()}</nav>${state.boot.static_demo ? '<div class="demo-banner"><span class="dot"></span>Demo · datos en este navegador <button class="text-btn" id="demo-info">Cómo funciona</button></div>' : ""}`;
+    )}</div><div><strong>${esc(state.user.name)}</strong><small>${state.boot.static_demo ? { ARTIST: "Artista demo", CLIENT: "Cliente demo", ENTERPRISE: "Empresa demo", LEADER: "Líder demo", AGENCY: "Agencia demo", ADMIN: "Admin demo" }[ArtiDomain.role(state.user)] : { ARTIST: "Cuenta artista", CLIENT: "Cuenta cliente", BUSINESS: "ARTIVO Business", ADMIN: "Administrador" }[state.user.role]}</small></div><button id="logout" title="Cerrar sesión">${icon("logout")}</button></div></div></aside><div class="workspace"><header class="topbar"><div class="breadcrumb">Tu espacio <span>/</span> <b>${item[2]}</b></div><div class="mobile-brand">${brand()}</div><div class="top-actions">${viewSwitcher()}<span class="location">${icon("pin")} República Dominicana</span><button class="icon-btn" data-nav="${state.user.role === "ADMIN" ? "admin" : "messages"}" title="${state.user.role === "ADMIN" ? "Administración" : "Abrir mensajes"}">${icon(state.user.role === "ADMIN" ? "shield" : "chat")}</button><button class="icon-btn" data-nav="profile" title="Abrir perfil"><span class="avatar">${esc(state.user.name[0])}</span></button></div></header><main id="content" class="content"><div class="loading">Preparando tu espacio…</div></main></div><nav class="mobile-menu">${mobileNav()}</nav>${state.boot.static_demo ? '<div class="demo-banner"><span class="dot"></span>Demo · datos en este navegador <button class="text-btn" id="demo-info">Cómo funciona</button></div>' : ""}`;
   $$("[data-nav]").forEach((b) => (b.onclick = () => navigate(b.dataset.nav)));
   $$("[data-view]").forEach(
     (b) => (b.onclick = () => switchView(b.dataset.view)),
+  );
+  $("#arti-accounts")?.addEventListener("click", artiAccounts);
+  $("#arti-role")?.addEventListener("change", (e) =>
+    switchView(e.target.value),
   );
   $("#demo-info")?.addEventListener("click", demoInfo);
   $("#logout").onclick = async () => {
@@ -384,7 +410,11 @@ async function render() {
   const version = ++state.renderVersion;
   shell();
   try {
-    if (state.page === "feed") {
+    if (state.boot.static_demo && state.page === "arti") {
+      await loadArti(version);
+    } else if (state.boot.static_demo && state.page === "scenarios") {
+      await renderArtiScenarios(version);
+    } else if (state.page === "feed") {
       await loadFeed(version);
     } else if (state.page === "discover" || state.page === "favorites") {
       await loadArtists();
@@ -522,7 +552,7 @@ async function openArtist(id) {
         .map((t) => `<span class="tag">${esc(t)}</span>`)
         .join(
           "",
-        )}</div><div class="detail-grid"><div><small>EQUIPO INCLUIDO</small><strong>${esc(a.equipment || "Consultar con el artista")}</strong></div><div><small>ZONA DE SERVICIO</small><strong>${esc(a.city)} · Radio de ${a.radius} km</strong></div></div>${a.media_url ? `<p><a class="btn light" href="${esc(a.media_url)}" target="_blank" rel="noopener">Ver presentación ↗</a></p>` : ""}<div class="section-head"><h3>Disponibilidad publicada</h3></div>${
+        )}</div><div class="detail-grid"><div><small>EQUIPO INCLUIDO</small><strong>${esc(a.equipment || "Consultar con el artista")}</strong></div><div><small>ZONA DE SERVICIO</small><strong>${esc(a.city)} · Radio de ${a.radius} km</strong></div></div>${state.boot.static_demo && a.demo_stats ? `<div class="arti-note">Reputación ficticia · ★ ${a.demo_stats.rating.toFixed(1)} · puntualidad ${a.demo_stats.punctuality}% · ${a.demo_stats.completed} eventos de muestra · desde US$${a.demo_price_usd}</div><video class="arti-portfolio-video" src="demo-performance.mp4" poster="demo-stage.svg" controls playsinline preload="metadata" aria-label="Clip sintético de portfolio demo"></video>` : ""}${a.media_url ? `<p><a class="btn light" href="${esc(a.media_url)}" target="_blank" rel="noopener">Ver presentación ↗</a></p>` : ""}<div class="section-head"><h3>Disponibilidad publicada</h3></div>${
         a.availability.length
           ? a.availability
               .slice(0, 8)
@@ -799,7 +829,14 @@ async function renderDashboard() {
         : "Tu próximo gran evento empieza aquí.",
       `<button class="btn" id="dash-action">${icon(artist ? "bolt" : "plus")} ${artist ? "Gestionar disponibilidad" : "Encontrar un artista"}</button>`,
     ) +
+    (state.boot.static_demo
+      ? `<section class="arti-feed-demand"><div class="section-head"><div><h3>Tu próxima oportunidad empieza en ARTI.</h3><p class="muted">Negocia, reserva fechas, registra llegada y cobra con Fast Pay simulado.</p></div><button class="btn" id="dash-arti">Explorar oportunidades</button></div></section>`
+      : "") +
     `<div class="stats-grid"><div class="stat accent"><small>${artist ? "Ganancia real del mes" : "Inversión en experiencias"}</small><strong>${money(artist ? w.month_profit : completed.reduce((s, b) => s + b.amount, 0))}</strong><span class="sub">${artist ? "Ingresos − comisiones − gastos" : "Servicios completados"}</span></div><div class="stat"><small>Próximos eventos</small><strong>${upcoming.length}</strong><span class="sub">Confirmados y en curso</span></div><div class="stat"><small>Solicitudes activas</small><strong>${pending.length}</strong><span class="sub">Tu próxima oportunidad</span></div><div class="stat"><small>Experiencias completadas</small><strong>${completed.length}</strong><span class="sub">Momentos que cuentan</span></div></div><div class="two-col"><div class="panel"><div class="section-head"><h2>En tu radar</h2><button class="text-btn" id="all-bookings">Ver todo ↗</button></div>${[...pending, ...upcoming].slice(0, 5).map(bookingRow).join("") || empty("Tu próxima experiencia te espera", artist ? "Pon tu perfil activo y publica tu disponibilidad." : "Descubre el talento que dará vida a tu próximo evento.", "calendar")}</div><div><div class="panel"><div class="eyebrow">${artist ? "TU ESTADO" : "LA CONEXIÓN PERFECTA"}</div><h2>${artist ? (state.boot.profile?.active ? "Talento activo." : "Es tu momento.") : "¿Qué tienes en mente?"}</h2><p class="profile-text">${artist ? "Tu perfil y tus horarios ayudan a los clientes a encontrarte. Haz que tu próxima presentación empiece aquí." : "Una cena especial, una boda o una noche entre amigos. Hay un artista para cada momento."}</p><button class="btn light" id="dash-profile">${artist ? "Editar mi perfil" : "Explorar talento"} ${icon("arrow")}</button></div>${artist ? `<div class="panel"><small>DINERO DISPONIBLE · SIMULADO</small><h2>${money(w.available)}</h2><p class="profile-text">Pendiente de completar: ${money(w.pending)}</p><button class="text-btn" id="dash-wallet">Ver mi cartera ↗</button></div>` : `<div class="panel"><div class="eyebrow">ASÍ DE SIMPLE</div><p class="profile-text">Descubre un artista. Envía tu solicitud. Recibe su respuesta y confirma tu reserva.</p>${icon("music")}</div>`}</div></div>`;
+  $("#dash-arti")?.addEventListener("click", () => {
+    artiUI.tab = "opportunities";
+    navigate("arti");
+  });
   $("#dash-action").onclick = () => navigate(artist ? "calendar" : "discover");
   $("#all-bookings").onclick = () => navigate("bookings");
   $("#dash-profile").onclick = () => navigate(artist ? "profile" : "discover");
@@ -823,9 +860,23 @@ function renderProfile() {
             "category_id",
             state.boot.categories.map((c) => ({ value: c.id, label: c.name })),
             a?.category_id || 1,
-          )}${field("Ciudad", "city", "text", a?.city || "", 'required maxlength="80" placeholder="Punta Cana"')}${field("Tarifa desde (RD$ / evento)", "rate", "number", a?.rate || 7000, 'required min="500" max="1000000"')}${field("Radio de servicio (km)", "radius", "number", a?.radius || 25, 'required min="1" max="200"')}${field("Géneros (separados por ·)", "genres", "text", a?.genres || "", 'maxlength="200"')}<div class="field full"><label for="bio">Tu historia</label><textarea id="bio" name="bio" maxlength="1500" placeholder="Qué te hace único…">${esc(a?.bio || "")}</textarea></div>${field("Equipo incluido", "equipment", "text", a?.equipment || "", 'maxlength="500"')}${field("URL de foto (HTTPS)", "photo", "url", a?.photo || "", 'placeholder="https://…"')}${field("URL de video o presentación (HTTPS)", "media_url", "url", a?.media_url || "", 'placeholder="https://…"')}</div><p class="legal">Se publica tu ciudad y tu zona de servicio. Tu dirección privada y tus finanzas no aparecen en el perfil.</p><p class="error"></p><div class="form-actions"><button class="btn" type="submit">Guardar perfil</button></div></form></div>`
+          )}${field("Ciudad", "city", "text", a?.city || "", 'required maxlength="80" placeholder="Punta Cana"')}${field("Tarifa desde (RD$ / evento)", "rate", "number", a?.rate || 7000, 'required min="500" max="1000000"')}${field("Radio de servicio (km)", "radius", "number", a?.radius || 25, 'required min="1" max="200"')}${field("Géneros (separados por ·)", "genres", "text", a?.genres || "", 'maxlength="200"')}<div class="field full"><label for="bio">Tu historia</label><textarea id="bio" name="bio" maxlength="1500" placeholder="Qué te hace único…">${esc(a?.bio || "")}</textarea></div>${field("Equipo incluido", "equipment", "text", a?.equipment || "", 'maxlength="500"')}${field("URL de foto (HTTPS)", "photo", "url", a?.photo && a.photo.startsWith("https:") ? a.photo : "", 'placeholder="https://…"')}${field("URL de video o presentación (HTTPS)", "media_url", "url", a?.media_url && a.media_url.startsWith("https:") ? a.media_url : "", 'placeholder="https://…"')}</div><p class="legal">Se publica tu ciudad y tu zona de servicio. Tu dirección privada y tus finanzas no aparecen en el perfil.</p><p class="error"></p><div class="form-actions"><button class="btn" type="submit">Guardar perfil</button></div></form></div>`
         : `<div class="panel"><h2>${state.user.role === "BUSINESS" ? "Tu espacio Business" : "Listo para tu próximo momento"}</h2><p class="profile-text">${state.user.role === "BUSINESS" ? "Gestiona las solicitudes, reservas y conversaciones de tu empresa." : "Encuentra artistas, guarda tus favoritos y organiza tus reservas."}</p><button class="btn" id="profile-discover">Descubrir talento ${icon("arrow")}</button></div>`
-    }`;
+    }` +
+    (state.boot.static_demo && artist
+      ? `<section class="panel"><h2>Tu portfolio profesional · demo</h2><video class="arti-portfolio-video" src="demo-performance.mp4" poster="demo-stage.svg" controls playsinline preload="metadata"></video><p class="muted">Clip sintético local. La reputación del perfil demo es ficticia.</p><form id="arti-pro-profile"><div class="form-grid">${field("Precio desde (USD · demo)", "price_from", "number", a?.demo_price_usd || 250, 'min="1" required')}${field("Instrumentos", "instruments", "text", a?.instruments || "Piano", "required")}${field("Experiencia", "experience", "text", a?.experience || "Trayectoria profesional de muestra", "required")}</div><p class="error"></p><div class="form-actions"><button class="btn" type="submit">Guardar datos demo</button></div></form><div class="form-actions"><button class="btn light" id="arti-upload-media">Subir foto / video</button><button class="btn" id="arti-profile-opportunities">Ver oportunidades</button></div></section>`
+      : "");
+  if ($("#arti-pro-profile"))
+    bindForm("#arti-pro-profile", async (f) => {
+      const r = await api("/api/arti/artist_profile", f);
+      state.boot = await api("/api/bootstrap");
+      toast(r.message);
+    });
+  $("#arti-upload-media")?.addEventListener("click", artiUploadMedia);
+  $("#arti-profile-opportunities")?.addEventListener("click", () => {
+    artiUI.tab = "opportunities";
+    navigate("arti");
+  });
   $("#profile-logout").onclick = () => $("#logout").click();
   $("#profile-discover")?.addEventListener("click", () => navigate("discover"));
   if (artist)
@@ -1127,12 +1178,17 @@ function renderAdmin(a) {
     const r = await api("/api/auth/me");
     state.boot = { demo: r.demo, static_demo: r.static_demo };
     state.user = r.user;
-    const view =
-      new URLSearchParams(location.search).get("view") ||
-      (window.ARTIVO_STATIC_DEMO ? "cliente" : null);
+    const view = new URLSearchParams(location.search).get("view") || null;
+    if (window.ARTIVO_STATIC_DEMO && view === "demo") {
+      state.user = null;
+      renderAuth();
+      return;
+    }
     if (
       r.demo &&
-      ["cliente", "musico"].includes(view) &&
+      ["cliente", "musico", "lider", "empresa", "agencia", "admin"].includes(
+        view,
+      ) &&
       (!state.user || state.user.email.endsWith("@artivo.demo"))
     ) {
       await switchView(view);

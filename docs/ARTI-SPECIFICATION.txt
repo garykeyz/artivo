@@ -1,0 +1,3583 @@
+ACTÚA COMO UN EQUIPO SENIOR MULTIDISCIPLINARIO compuesto por:
+
+- Chief Product Officer
+- Product Manager Marketplace
+- Product Manager B2B / Enterprise
+- Product Manager Fintech
+- UX/UI Lead
+- Software Architect
+- Backend Engineer
+- Frontend Engineer
+- Mobile Engineer
+- Database Architect
+- Cloud Architect
+- DevOps Engineer
+- Media/Video Infrastructure Engineer
+- Payments Engineer
+- Risk & Credit Systems Engineer
+- Fraud Prevention Engineer
+- Geolocation Systems Engineer
+- Security Engineer
+- Compliance-aware Fintech Architect
+- QA / Automation Engineer
+- Data Analyst
+- Growth Product Designer
+
+============================================================
+1. VISIÓN GENERAL DE ARTI
+============================================================
+
+Diseñar ARTI como una plataforma tecnológica integral para el mercado de entretenimiento, música, hospitalidad, eventos y producción.
+
+ARTI NO debe ser concebida simplemente como un directorio o marketplace de artistas.
+
+Debe funcionar como:
+
+SOCIAL NETWORK
++
+TALENT MARKETPLACE
++
+EVENT MARKETPLACE
++
+BOOKING PLATFORM
++
+ENTERPRISE STAFFING PLATFORM
++
+NEGOTIATION PLATFORM
++
+PAYMENT PLATFORM
++
+CREDIT / FACTORING ORCHESTRATION
++
+REPUTATION SYSTEM
++
+EVENT VERIFICATION SYSTEM
+
+La plataforma debe conectar:
+
+1. Empresas
+2. Hoteles
+3. Resorts
+4. Restaurantes
+5. Bares
+6. Agencias
+7. Productoras
+8. Promotores
+9. Venues
+10. Organizadores
+11. Hosts
+12. Líderes de bandas
+13. Managers
+14. Intermediarios
+15. Músicos
+16. DJs
+17. Cantantes
+18. Bandas
+19. Técnicos
+20. Artistas
+21. Profesionales de producción
+
+El sistema debe permitir tanto:
+
+- contratación individual
+- contratación grupal
+- contratación recurrente
+- contratos fijos
+- residencias
+- temporadas
+- paquetes de eventos
+- grandes volúmenes de eventos
+- solicitudes abiertas
+- negociaciones
+- invitaciones privadas
+- contratación por intermediarios
+
+============================================================
+2. CONCEPTO CENTRAL
+============================================================
+
+ARTI debe resolver este problema:
+
+Una empresa puede necesitar:
+
+- un músico
+- un DJ
+- una banda
+- 10 músicos
+- varios DJs
+- una banda cada semana
+- múltiples artistas durante una temporada
+- 50 eventos durante 3 meses
+- personal artístico para diferentes venues
+
+En lugar de contratar manualmente a cada artista, la empresa puede publicar una oportunidad en ARTI.
+
+Ejemplo:
+
+HOTEL ABC
+
+"Buscamos:
+
+DJ
+Viernes y sábados
+20:00–00:00
+4 horas
+Residencia mensual
+4 fechas
+Tarifa:
+US$250 por evento
+
+Zona:
+Punta Cana
+
+Fecha límite para aceptar:
+Octubre 15"
+
+Esta publicación puede llegar a:
+
+- DJs
+- líderes
+- managers
+- agencias
+- intermediarios
+
+según filtros, ubicación, género, disponibilidad, precio y categoría.
+
+============================================================
+3. MODELO DE MARKETPLACE MULTINIVEL
+============================================================
+
+ARTI debe soportar múltiples niveles de contratación.
+
+Ejemplo:
+
+EMPRESA
+↓
+AGENCIA / INTERMEDIARIO
+↓
+LÍDER / HOST / MANAGER
+↓
+ARTISTAS
+
+Pero también:
+
+EMPRESA
+↓
+ARTISTA
+
+o:
+
+EMPRESA
+↓
+LÍDER
+↓
+ARTISTAS
+
+o:
+
+AGENCIA
+↓
+ARTISTA
+
+o:
+
+PROMOTOR
+↓
+BANDA
+
+La plataforma debe permitir cualquiera de estas estructuras.
+
+============================================================
+4. ROLES PRINCIPALES
+============================================================
+
+Crear como mínimo:
+
+SUPER_ADMIN
+
+ARTI_ADMIN
+
+ARTI_OPERATIONS
+
+ARTI_FINANCE
+
+ARTI_RISK
+
+ARTI_SUPPORT
+
+ENTERPRISE
+
+ENTERPRISE_ADMIN
+
+ENTERPRISE_MANAGER
+
+ENTERPRISE_FINANCE
+
+AGENCY
+
+PROMOTER
+
+VENUE_MANAGER
+
+EVENT_ORGANIZER
+
+HOST
+
+LEADER
+
+BAND_LEADER
+
+MANAGER
+
+INTERMEDIARY
+
+PROVIDER
+
+ARTIST
+
+MUSICIAN
+
+DJ
+
+SINGER
+
+BAND
+
+TECHNICIAN
+
+PRODUCTION_PROVIDER
+
+PARTNER_BANK
+
+PARTNER_FACTOR
+
+PARTNER_INSURER
+
+Un usuario puede tener múltiples roles.
+
+Implementar RBAC.
+
+============================================================
+5. PERFIL PROFESIONAL DEL ARTISTA
+============================================================
+
+Cada artista debe tener un perfil profesional y social.
+
+Campos principales:
+
+profile_id
+user_id
+display_name
+stage_name
+profile_photo
+cover_photo
+bio
+location
+country
+city
+categories
+genres
+instruments
+languages
+skills
+experience
+years_active
+price_from
+price_to
+currency
+availability
+rating
+completed_events
+cancellation_rate
+punctuality_score
+response_rate
+verification_status
+professional_level
+social_links
+website
+contact_preferences
+
+El perfil debe poder contener:
+
+- fotografías
+- videos
+- presentaciones
+- reels
+- audios
+- posters
+- EPK
+- press kit
+- documentos
+- certificados
+- referencias
+
+============================================================
+6. PERFIL SOCIAL
+============================================================
+
+ARTI debe tener un componente de red social.
+
+Los usuarios pueden:
+
+- publicar
+- reaccionar
+- comentar
+- compartir
+- guardar
+- seguir perfiles
+- ver contenido
+- enviar invitaciones
+- mencionar usuarios
+- reportar contenido
+
+El feed debe poder mostrar:
+
+- actuaciones
+- reels
+- videos
+- anuncios de disponibilidad
+- eventos
+- publicaciones empresariales
+- oportunidades
+- contratos
+- portfolios
+
+No convertir ARTI en una copia genérica de Instagram.
+
+El componente social debe estar orientado al mercado profesional de eventos y entretenimiento.
+
+============================================================
+7. ARTI MEDIA
+============================================================
+
+Crear un Media Service independiente.
+
+IMPORTANTE:
+
+NO guardar videos directamente dentro de la base de datos.
+
+La arquitectura debe utilizar:
+
+APPLICATION
+↓
+MEDIA API
+↓
+OBJECT STORAGE
+↓
+VIDEO PROCESSING
+↓
+CDN
+↓
+USER
+
+La solución debe ser provider-agnostic.
+
+Debe poder trabajar con:
+
+- Amazon S3
+- Cloudflare R2
+- Google Cloud Storage
+- Azure Blob Storage
+- otros proveedores compatibles
+
+El sistema debe almacenar en la base de datos solamente:
+
+media_id
+owner_id
+storage_provider
+storage_key
+cdn_url
+thumbnail_url
+mime_type
+file_size
+duration
+width
+height
+status
+visibility
+created_at
+
+Implementar un Media Provider Interface.
+
+Ejemplo:
+
+uploadMedia()
+generateUploadUrl()
+deleteMedia()
+getMetadata()
+generateThumbnail()
+processVideo()
+publishMedia()
+setVisibility()
+
+============================================================
+8. VIDEO UPLOAD
+============================================================
+
+Permitir:
+
+- MP4
+- MOV
+- WebM
+
+Configurar límites y políticas mediante variables de entorno.
+
+Al subir un video:
+
+UPLOAD
+↓
+VALIDATE
+↓
+VIRUS / SECURITY CHECK
+↓
+STORE ORIGINAL
+↓
+TRANSCODE
+↓
+GENERATE THUMBNAIL
+↓
+GENERATE STREAMABLE VERSION
+↓
+CDN
+↓
+PUBLISH
+
+No utilizar una única resolución.
+
+Generar versiones adaptativas cuando corresponda.
+
+Implementar streaming.
+
+============================================================
+9. MEDIA PRIVACY
+============================================================
+
+Cada archivo debe tener:
+
+PUBLIC
+FOLLOWERS_ONLY
+PRIVATE
+ENTERPRISE_ONLY
+BOOKING_ONLY
+TEAM_ONLY
+
+Los documentos sensibles no deben ser públicos.
+
+Los videos promocionales pueden ser públicos.
+
+Los contratos y documentos financieros deben ser privados.
+
+============================================================
+10. ARTI DISCOVER
+============================================================
+
+Crear sistema de descubrimiento.
+
+Filtros:
+
+location
+distance
+category
+genre
+instrument
+language
+price
+rating
+availability
+verified
+professional_level
+event_type
+corporate_ready
+enterprise_ready
+fast_response
+punctuality
+completed_events
+
+El buscador debe permitir encontrar:
+
+- artistas
+- bandas
+- líderes
+- hosts
+- agencias
+- proveedores
+- oportunidades
+- eventos
+
+============================================================
+11. ARTI OPPORTUNITIES
+============================================================
+
+Crear un módulo central llamado:
+
+ARTI OPPORTUNITIES
+
+Cualquier usuario autorizado puede crear una oportunidad.
+
+Ejemplo:
+
+--------------------------------------------------
+OPPORTUNITY
+
+DJ RESIDENCY — HOTEL ABC
+
+Location:
+Punta Cana
+
+Dates:
+Every Friday and Saturday
+
+Duration:
+4 hours
+
+Time:
+20:00 – 00:00
+
+Rate:
+US$250/event
+
+Contract:
+3 months
+
+Number of events:
+24
+
+Requirements:
+DJ equipment
+Professional attire
+English communication
+
+Application deadline:
+Oct 15
+
+[NEGOTIATE]
+[ACCEPT]
+[APPLY]
+[SHARE]
+--------------------------------------------------
+
+============================================================
+12. PUBLICACIÓN DE EVENTOS
+============================================================
+
+Una publicación de oportunidad debe tener:
+
+title
+description
+event_category
+event_type
+location
+venue
+date
+start_time
+end_time
+setup_time
+artist_call_time
+duration
+quantity_needed
+price
+currency
+price_type
+payment_terms
+requirements
+equipment_requirements
+dress_code
+transportation
+accommodation
+meal_policy
+contract_type
+visibility
+application_deadline
+negotiation_allowed
+minimum_price
+maximum_budget
+recurrence
+number_of_events
+
+Debe permitir:
+
+UNA FECHA
+
+o:
+
+MÚLTIPLES FECHAS
+
+o:
+
+RECURRENCIA
+
+o:
+
+MASA DE EVENTOS
+
+============================================================
+13. MASA DE EVENTOS
+============================================================
+
+Esta función es FUNDAMENTAL para ARTI ENTERPRISE.
+
+Ejemplo:
+
+HOTEL ABC
+
+Necesita:
+
+24 DJs
+
+durante:
+
+3 meses
+
+Formato:
+
+2 eventos por semana
+
+ARTI debe poder crear una:
+
+EVENT SERIES
+
+con:
+
+series_id
+total_events
+recurrence_rule
+venue
+default_rate
+payment_terms
+requirements
+available_slots
+
+Los artistas pueden:
+
+- aceptar toda la serie
+- aceptar determinadas fechas
+- rechazar determinadas fechas
+- negociar la tarifa
+- solicitar otro horario
+- aceptar parcialmente
+
+============================================================
+14. CONTRATOS FIJOS / RESIDENCIAS
+============================================================
+
+Crear:
+
+RESIDENCY
+
+Ejemplos:
+
+DJ residente
+Pianista residente
+Banda residente
+Host residente
+
+Permitir:
+
+- duración
+- fechas
+- días de la semana
+- tarifa
+- horas
+- vacaciones
+- sustituciones
+- cancelaciones
+- condiciones especiales
+
+============================================================
+15. SISTEMA DE RESERVA DE FECHAS
+============================================================
+
+Cada artista debe tener:
+
+Availability Calendar
+
+Estados:
+
+AVAILABLE
+TENTATIVE
+RESERVED
+CONFIRMED
+BLOCKED
+UNAVAILABLE
+COMPLETED
+CANCELLED
+
+Cuando recibe una oferta:
+
+el artista puede reservar temporalmente una fecha.
+
+Crear:
+
+DATE_HOLD
+
+con expiración.
+
+Ejemplo:
+
+"Esta fecha está reservada temporalmente durante 15 minutos mientras negocias."
+
+============================================================
+16. NEGOCIACIÓN ESTILO INDRIVE
+============================================================
+
+Crear un sistema de negociación bidireccional.
+
+La empresa publica:
+
+US$250
+
+El artista puede:
+
+ACCEPT
+
+o:
+
+COUNTER_OFFER
+
+Ejemplo:
+
+Empresa:
+
+US$250
+20:00–00:00
+
+Artista:
+
+"US$300"
+
+o:
+
+"US$280 + transporte"
+
+o:
+
+"US$250 pero 21:00–01:00"
+
+o:
+
+"US$300 por fecha pero acepto las 24 fechas"
+
+El sistema debe registrar:
+
+original_offer
+counter_offer
+counter_message
+counter_time
+counter_terms
+expiration
+accepted_by
+rejected_by
+negotiation_round
+
+Puede existir un máximo configurable de rondas.
+
+============================================================
+17. NEGOCIACIÓN DE PRECIO Y HORARIO
+============================================================
+
+La negociación NO debe estar limitada al precio.
+
+Permitir negociar:
+
+- tarifa
+- duración
+- horario
+- call time
+- cantidad de eventos
+- transporte
+- alimentación
+- alojamiento
+- equipo
+- repertorio
+- dress code
+- frecuencia
+- cantidad de fechas
+- anticipo
+- condiciones de pago
+
+============================================================
+18. "DESDE" / PRICE FROM
+============================================================
+
+Cada artista debe poder establecer:
+
+PRICE FROM
+
+Ejemplo:
+
+"Desde US$200"
+
+Pero el precio final siempre debe depender del:
+
+- evento
+- fecha
+- horario
+- duración
+- distancia
+- requisitos
+- temporada
+- cantidad de eventos
+
+Nunca interpretar automáticamente "desde" como precio final.
+
+============================================================
+19. OFERTA A MASA DE ARTISTAS
+============================================================
+
+Un líder o empresa debe poder enviar una oportunidad a múltiples artistas.
+
+Ejemplo:
+
+"Buscamos 10 músicos para una serie de 20 eventos."
+
+ARTI debe permitir:
+
+SEND TO:
+50 ARTISTS
+
+Después visualizar:
+
+50 contacted
+18 viewed
+12 negotiating
+8 accepted
+2 pending
+5 rejected
+
+El sistema debe evitar overbooking.
+
+============================================================
+20. LEADERS / HOSTS / BAND LEADERS
+============================================================
+
+Este es un componente central de ARTI.
+
+Un LEADER puede:
+
+- administrar una banda
+- representar artistas
+- publicar oportunidades
+- recibir oportunidades empresariales
+- distribuir eventos
+- negociar tarifas
+- crear equipos
+- sustituir artistas
+- administrar disponibilidad
+- recibir contratos
+- aceptar series de eventos
+
+Crear:
+
+TEAM
+
+Ejemplo:
+
+TEAM:
+"Gary Keyz Band"
+
+Members:
+
+Piano
+Bass
+Drums
+Guitar
+Singer
+
+El líder puede recibir:
+
+"24 eventos"
+
+y posteriormente asignar:
+
+Evento 1 → músico A
+Evento 2 → músico B
+Evento 3 → músico C
+
+etc.
+
+============================================================
+21. INTERMEDIARIOS
+============================================================
+
+Una agencia o intermediario puede actuar entre empresa y artista.
+
+Ejemplo:
+
+HOTEL
+↓
+AGENCIA ABC
+↓
+ARTI
+↓
+LEADER
+↓
+ARTIST
+
+La plataforma debe registrar:
+
+who originated the opportunity
+who negotiated
+who accepted
+who fulfilled
+who gets commission
+who pays provider
+who receives money
+
+Nunca perder el origen de la transacción.
+
+============================================================
+22. SPLIT / COMISIONES
+============================================================
+
+Una transacción puede tener múltiples beneficiarios.
+
+Ejemplo:
+
+Empresa paga:
+
+US$1,000
+
+Distribución:
+
+Artista:
+US$700
+
+Líder:
+US$100
+
+Agencia:
+US$100
+
+ARTI:
+US$100
+
+La distribución debe quedar definida en:
+
+Settlement Rules.
+
+No hardcodear porcentajes.
+
+============================================================
+23. ARTI ENTERPRISE
+============================================================
+
+Una empresa puede administrar:
+
+múltiples venues
+múltiples propiedades
+múltiples eventos
+múltiples departamentos
+múltiples responsables
+
+Debe poder publicar:
+
+1 evento
+
+10 eventos
+
+100 eventos
+
+1000 eventos
+
+============================================================
+24. ENTERPRISE REQUEST BOARD
+============================================================
+
+Crear un panel:
+
+OPEN OPPORTUNITIES
+
+con oportunidades filtradas por:
+
+- categoría
+- ubicación
+- presupuesto
+- fechas
+- cantidad
+- empresa
+- líder
+- volumen de eventos
+- duración
+- requisitos
+
+Los artistas y líderes pueden:
+
+APPLY
+ACCEPT
+NEGOTIATE
+SAVE
+DECLINE
+
+============================================================
+25. PERFIL DEL SOLICITANTE
+============================================================
+
+Cada oportunidad debe mostrar quién solicita.
+
+Ejemplo:
+
+HOTEL ABC
+Verified Enterprise ✅
+ARTI Enterprise Member
+44 completed bookings
+98% payment compliance
+
+o:
+
+AGENCY XYZ
+Verified Agency ✅
+
+o:
+
+LEADER ABC
+Verified Leader ✅
+
+El historial debe generar confianza.
+
+============================================================
+26. FOLLOWING / ALERTS
+============================================================
+
+Los artistas pueden seguir:
+
+- empresas
+- hoteles
+- líderes
+- agencias
+- géneros
+- ciudades
+- tipos de eventos
+
+Y recibir alertas cuando aparezca una oportunidad relevante.
+
+============================================================
+27. JOURNALING / ONBOARDING
+============================================================
+
+Crear un sistema de:
+
+ARTI JOURNAL
+
+Debe funcionar como un pequeño centro educativo/informativo.
+
+Especialmente para usuarios nuevos.
+
+Ejemplos:
+
+"Bienvenido a ARTI"
+
+"Cómo aceptar tu primer evento"
+
+"Cómo funciona una negociación"
+
+"Cómo reservar una fecha"
+
+"Qué significa NET 30 / NET 60 / NET 90"
+
+"Qué es factoring"
+
+"Cómo funciona ARTI Fast Pay"
+
+"Cómo se verifica tu llegada"
+
+"Cómo evitar penalizaciones"
+
+"Cómo subir tu EPK"
+
+"Cómo aumentar tu ARTI Score"
+
+El journaling debe poder aparecer:
+
+- después del registro
+- en onboarding
+- en dashboard
+- mediante notificaciones
+- como artículos
+- como mini tutoriales
+
+============================================================
+28. FACTORING EDUCATION
+============================================================
+
+Dentro de ARTI Enterprise y ARTI Finance incluir:
+
+"¿Por qué la empresa puede pagar a 90 días y el artista cobrar antes?"
+
+Explicar visualmente:
+
+EMPRESA
+paga a 90 días
+
+ARTI
+gestiona la operación
+
+PARTNER FINANCIERO
+puede adelantar la factura
+
+ARTISTA
+recibe dinero antes
+
+La explicación debe dejar claro que:
+
+- el financiamiento depende de aprobación
+- ARTI no garantiza automáticamente financiación
+- las condiciones dependen del partner
+- pueden existir fees
+- puede existir seguro de crédito
+
+============================================================
+29. ARTI CREDIT
+============================================================
+
+Mantener el módulo de crédito empresarial.
+
+Campos:
+
+credit_status
+credit_limit
+available_credit
+used_credit
+payment_terms
+risk_level
+approval_date
+review_date
+partner_provider
+insurance_status
+factoring_eligibility
+manual_review_required
+
+Estados:
+
+PENDING_REVIEW
+APPROVED
+LIMITED
+SUSPENDED
+REJECTED
+EXPIRED
+
+============================================================
+30. FACTORING Y SEGURO
+============================================================
+
+Mantener arquitectura provider-agnostic.
+
+ARTI NO será inicialmente:
+
+- banco
+- aseguradora
+- prestamista regulado
+
+Debe integrarse mediante:
+
+Financial Integration Layer
+
+con:
+
+banks
+factoring companies
+insurance providers
+payment providers
+
+Crear:
+
+FinancingProvider Interface
+
+InsuranceProvider Interface
+
+No hardcodear proveedores.
+
+Debe funcionar:
+
+NO_FINANCING
+MANUAL_FINANCING
+PARTNER_FINANCING
+INSURED_FINANCING
+
+============================================================
+31. ARTII FAST PAY
+============================================================
+
+Después de completar un evento:
+
+EVENT COMPLETED ✅
+
+ARTI debe mostrar:
+
+Payment:
+US$500
+
+Standard settlement:
+Nov 15
+
+Fast Pay:
+
+Receive now:
+US$490
+
+Fee:
+US$10
+
+[GET PAID NOW]
+
+El fee debe ser configurable y dinámico.
+
+============================================================
+32. EVENT EXECUTION ENGINE
+============================================================
+
+El evento no termina simplemente con "completed".
+
+Debe tener un ciclo operacional completo:
+
+BOOKING_CONFIRMED
+↓
+DATE_RESERVED
+↓
+UPCOMING
+↓
+CALL_TIME
+↓
+CHECK-IN_WINDOW
+↓
+ARRIVAL_REQUIRED
+↓
+ARRIVED
+↓
+SETUP
+↓
+SETUP_VERIFIED
+↓
+EVENT_STARTED
+↓
+EVENT_COMPLETED
+↓
+SERVICE_VERIFIED
+↓
+INVOICE
+↓
+SETTLEMENT
+
+============================================================
+33. OBLIGACIÓN DE LLEGADA
+============================================================
+
+El artista debe estar obligado contractualmente a presentarse:
+
+1 HORA ANTES
+
+Ejemplo:
+
+Evento:
+20:00
+
+Call Time:
+19:00
+
+Setup:
+19:00–19:45
+
+Ready:
+19:45
+
+Event Start:
+20:00
+
+El sistema debe mostrar una cuenta regresiva.
+
+============================================================
+34. COUNTDOWN DE LLEGADA
+============================================================
+
+Ejemplo:
+
+EVENT STARTS IN:
+01:32:14
+
+CALL TIME:
+19:00
+
+CURRENT STATUS:
+NOT CHECKED IN
+
+Si llega tarde:
+
+LATE BY:
+00:12:35
+
+Debe existir un historial preciso de:
+
+scheduled_arrival_time
+actual_arrival_time
+scheduled_event_start
+actual_event_start
+
+============================================================
+35. GEOFENCING
+============================================================
+
+Cada evento debe tener una geozona.
+
+Ejemplo:
+
+Venue:
+Hotel ABC
+
+Geofence:
+250 meters
+
+Cuando el artista entra a la zona:
+
+ARRIVAL DETECTED
+
+Pero la geolocalización NO debe ser la única prueba.
+
+Combinar cuando corresponda:
+
+- GPS
+- timestamp
+- QR code
+- venue confirmation
+- photo
+- video
+- device metadata
+- digital check-in
+
+============================================================
+36. CHECK-IN
+============================================================
+
+Crear:
+
+CHECK IN
+
+Métodos:
+
+GPS CHECK-IN
+QR CHECK-IN
+HOST CONFIRMATION
+VENUE CONFIRMATION
+
+El sistema debe evitar check-ins falsos.
+
+Permitir:
+
+"Request verification"
+
+cuando exista una discrepancia.
+
+============================================================
+37. SETUP VERIFICATION
+============================================================
+
+El artista debe poder cargar evidencia de setup.
+
+Ejemplo:
+
+SETUP REQUIRED BY:
+19:45
+
+Upload:
+
+PHOTO
+VIDEO
+
+"Show your equipment/setup."
+
+El archivo debe incluir:
+
+timestamp
+booking_id
+user_id
+event_id
+
+Cuando sea posible:
+
+geolocation metadata
+
+El sistema registra:
+
+SETUP SUBMITTED
+
+SETUP VERIFIED
+
+SETUP REJECTED
+
+PENDING REVIEW
+
+============================================================
+38. PRUEBA DE PRESENCIA
+============================================================
+
+Crear un sistema de evidencia.
+
+Evidence types:
+
+arrival_photo
+setup_photo
+setup_video
+host_confirmation
+venue_confirmation
+event_start_confirmation
+event_end_confirmation
+
+Toda evidencia debe quedar ligada a:
+
+booking
+event
+service
+invoice
+
+Esto también debe servir para resolver disputas y soportar procesos financieros.
+
+============================================================
+39. PUNTUALIDAD
+============================================================
+
+Crear:
+
+PUNCTUALITY SCORE
+
+Variables:
+
+- llegada temprana
+- llegada puntual
+- retrasos
+- ausencia
+- cancelaciones
+- setup completado
+- eventos completados
+
+Mostrar:
+
+Punctuality:
+98%
+
+No permitir que una sola incidencia destruya automáticamente la reputación.
+
+Usar reglas configurables.
+
+============================================================
+40. ATRASO
+============================================================
+
+Cuando el usuario incumpla call time:
+
+activar:
+
+LATE MODE
+
+Ejemplo:
+
+LATE
+
+12 MINUTES
+
+Debe mostrar:
+
+- tiempo de atraso
+- evento afectado
+- impacto potencial
+- acción requerida
+
+Ejemplo:
+
+"El evento requiere tu presencia inmediata."
+
+============================================================
+41. SANCIONES
+============================================================
+
+Crear:
+
+Penalty Engine
+
+Posibles acciones:
+
+WARNING
+FEE
+SCORE_REDUCTION
+OPPORTUNITY_LIMIT
+TEMPORARY_SUSPENSION
+ACCOUNT_REVIEW
+
+No aplicar una penalización automática irreversible sin permitir:
+
+- revisión
+- evidencia
+- disputa
+
+============================================================
+42. NO-SHOW
+============================================================
+
+Si el artista nunca llega:
+
+NO_SHOW
+
+Debe generar:
+
+- alerta a líder
+- alerta a empresa
+- alerta a ARTI
+- posible sustitución
+- evidencia
+- caso disciplinario
+
+============================================================
+43. SUSTITUCIONES
+============================================================
+
+Cuando un artista no puede cumplir:
+
+El líder o empresa debe poder buscar un sustituto.
+
+Ejemplo:
+
+ARTIST:
+Unable to attend
+
+[REQUEST SUBSTITUTE]
+
+ARTI busca:
+
+- misma categoría
+- mismo nivel
+- misma ubicación
+- disponibilidad
+- precio compatible
+
+============================================================
+44. PLANIFICACIÓN INTELIGENTE
+============================================================
+
+Cuando un artista acepta múltiples eventos, ARTI debe verificar:
+
+calendar conflicts
+travel distance
+overlapping events
+buffer time
+setup time
+
+No permitir una reserva imposible.
+
+Ejemplo:
+
+Event A:
+18:00–20:00
+Punta Cana
+
+Event B:
+20:30–23:00
+Santo Domingo
+
+Mostrar:
+
+TRAVEL CONFLICT
+
+============================================================
+45. BOOKING ENGINE
+============================================================
+
+Cada reserva debe tener:
+
+booking_id
+requester_id
+provider_id
+leader_id
+agency_id
+event_id
+series_id
+venue_id
+service_id
+agreed_price
+currency
+start_time
+end_time
+call_time
+setup_time
+status
+payment_terms
+negotiation_id
+contract_id
+verification_status
+
+============================================================
+46. ESTADOS DEL BOOKING
+============================================================
+
+DRAFT
+OFFERED
+NEGOTIATING
+PENDING_ACCEPTANCE
+DATE_HELD
+CONFIRMED
+CANCELLED
+IN_PROGRESS
+COMPLETED
+DISPUTED
+SETTLED
+
+============================================================
+47. COTIZACIONES
+============================================================
+
+Crear:
+
+QUOTE
+
+Permitir:
+
+- una oferta
+- varias alternativas
+- paquetes
+- precios por evento
+- precios por volumen
+- descuentos por series
+
+Ejemplo:
+
+1 evento:
+US$300
+
+10 eventos:
+US$275/event
+
+24 eventos:
+US$250/event
+
+El sistema debe permitir negociar esto.
+
+============================================================
+48. VOLUMEN
+============================================================
+
+Crear:
+
+VOLUME PRICING
+
+basado en:
+
+number_of_events
+contract_duration
+frequency
+team_size
+
+No asumir descuentos automáticos.
+
+============================================================
+49. CONTRATACIÓN DE EQUIPOS
+============================================================
+
+Un líder puede recibir una oportunidad:
+
+"Necesitamos banda de 5 músicos."
+
+ARTI debe permitir responder con:
+
+TEAM OFFER
+
+Ejemplo:
+
+Lead Vocal
+Piano
+Bass
+Drums
+Guitar
+
+Total:
+
+US$1,500
+
+El líder administra la asignación interna.
+
+============================================================
+50. MULTI-PROVIDER BOOKING
+============================================================
+
+Una oportunidad puede requerir varios proveedores:
+
+DJ
++
+Lighting
++
+Sound
++
+MC
++
+Band
+
+Crear:
+
+EVENT_PACKAGE
+
+La empresa puede contratar todo mediante una sola operación.
+
+============================================================
+51. ENTERPRISE MASTER AGREEMENT
+============================================================
+
+Una gran empresa puede firmar un acuerdo marco con ARTI.
+
+Ejemplo:
+
+MASTER SERVICE AGREEMENT
+
+Duration:
+12 months
+
+Credit:
+US$100,000
+
+Payment:
+NET 90
+
+Then individual bookings can be created under that agreement.
+
+============================================================
+52. CONTRATOS Y DOCUMENTOS
+============================================================
+
+Crear:
+
+Enterprise Agreement
+Master Service Agreement
+Booking Agreement
+Provider Agreement
+Leader Agreement
+Agency Agreement
+Credit Agreement
+Payment Terms
+Fast Pay Agreement
+Factoring Documentation
+Insurance Documentation
+
+============================================================
+53. FACTURACIÓN
+============================================================
+
+Mantener:
+
+Invoice Service
+
+Cada factura debe asociarse a:
+
+enterprise
+booking
+event
+series
+services
+provider
+leader
+agency
+commission
+payment_terms
+
+Estados:
+
+DRAFT
+ISSUED
+ACCEPTED
+DISPUTED
+FINANCED
+PARTIALLY_PAID
+PAID
+OVERDUE
+DEFAULT
+CANCELLED
+
+============================================================
+54. LEDGER
+============================================================
+
+Utilizar ledger de doble entrada.
+
+Registrar:
+
+invoices
+fees
+commissions
+payouts
+advances
+fast_pay
+refunds
+taxes
+adjustments
+financing
+insurance
+settlement
+
+No alterar saldos directamente.
+
+============================================================
+55. SETTLEMENT ENGINE
+============================================================
+
+Crear motor de liquidación.
+
+Debe calcular:
+
+gross amount
+platform commission
+leader commission
+agency commission
+provider payout
+financing cost
+insurance cost
+payment processing cost
+taxes
+net settlement
+
+============================================================
+56. DISPUTES
+============================================================
+
+Permitir disputas:
+
+- no-show
+- servicio incompleto
+- llegada tardía
+- monto
+- horario
+- cancelación
+- incumplimiento
+- setup
+- factura
+
+Toda disputa debe conservar evidencia.
+
+============================================================
+57. REPUTACIÓN
+============================================================
+
+Crear ARTI SCORE para proveedores y empresas.
+
+Para artistas:
+
+rating
+punctuality
+response rate
+completion rate
+cancellation rate
+dispute rate
+
+Para empresas:
+
+payment reliability
+booking completion
+cancellation rate
+dispute frequency
+response rate
+
+============================================================
+58. VERIFIED PROFILES
+============================================================
+
+Crear niveles:
+
+UNVERIFIED
+EMAIL_VERIFIED
+IDENTITY_VERIFIED
+PROFESSIONAL_VERIFIED
+ENTERPRISE_VERIFIED
+ARTI_TRUSTED
+
+Cada nivel debe poder tener requisitos distintos.
+
+============================================================
+59. FEED
+============================================================
+
+Crear:
+
+HOME FEED
+
+Contenido:
+
+- oportunidades
+- videos
+- publicaciones
+- eventos
+- artistas recomendados
+- empresas
+- líderes
+- promociones
+- disponibilidad
+- anuncios
+
+Algoritmo configurable.
+
+Priorizar:
+
+relevancia
+ubicación
+categoría
+disponibilidad
+confianza
+engagement
+calidad
+
+============================================================
+60. PUBLICAR COMO RED SOCIAL
+============================================================
+
+Un usuario puede crear:
+
+POST
+
+Tipos:
+
+TEXT
+PHOTO
+VIDEO
+OPPORTUNITY
+EVENT
+AVAILABILITY
+ANNOUNCEMENT
+PORTFOLIO
+
+Una publicación puede convertirse en una oportunidad contratatable.
+
+Ejemplo:
+
+Post:
+
+"Buscamos banda para boda este sábado."
+
+Botón:
+
+[CONVERT TO OPPORTUNITY]
+
+============================================================
+61. PRIVACIDAD Y VISIBILIDAD
+============================================================
+
+Cada oportunidad puede ser:
+
+PUBLIC
+FOLLOWERS_ONLY
+VERIFIED_USERS
+INVITE_ONLY
+ENTERPRISE_NETWORK
+PRIVATE
+
+============================================================
+62. MENSAJERÍA
+============================================================
+
+Crear ARTI MESSAGES.
+
+Conversaciones:
+
+User ↔ User
+Enterprise ↔ Artist
+Enterprise ↔ Leader
+Agency ↔ Artist
+Leader ↔ Team
+ARTI ↔ User
+
+Debe permitir:
+
+texto
+archivos
+ofertas
+contraofertas
+fechas
+documentos
+ubicaciones
+contratos
+
+Integrar negociación directamente dentro del chat.
+
+============================================================
+63. NOTIFICACIONES
+============================================================
+
+Notificaciones para:
+
+new opportunity
+new offer
+counter offer
+offer accepted
+offer rejected
+date reserved
+date confirmed
+upcoming event
+call time
+late arrival
+setup reminder
+setup rejected
+event completed
+payment available
+fast pay available
+invoice accepted
+invoice overdue
+credit approved
+financing approved
+
+============================================================
+64. MOBILE-FIRST
+============================================================
+
+El artista debe poder utilizar ARTI desde:
+
+iPhone
+Android
+Web
+
+Funciones críticas desde móvil:
+
+- aceptar evento
+- negociar
+- ver calendario
+- check-in
+- GPS
+- subir foto
+- subir video
+- confirmar setup
+- recibir pagos
+- ver oportunidades
+
+============================================================
+65. OFFLINE / BAD CONNECTION
+============================================================
+
+Los eventos pueden ocurrir en lugares con mala conexión.
+
+Diseñar check-in y evidencia con:
+
+offline queue
+
+La app debe guardar temporalmente:
+
+timestamp
+GPS
+event_id
+photos
+videos
+
+y sincronizar cuando exista conexión.
+
+============================================================
+66. FRAUD PREVENTION
+============================================================
+
+Detectar:
+
+GPS spoofing
+duplicate evidence
+reused photos
+fake check-ins
+impossible travel
+multiple simultaneous bookings
+device abuse
+fake accounts
+
+No asumir que GPS es suficiente.
+
+============================================================
+67. FINANCE
+============================================================
+
+Mantener:
+
+ARTI CREDIT
+ARTI FAST PAY
+ARTI FINANCE
+ARTI FACTORING
+ARTI INSURANCE
+ARTI PAYMENTS
+
+ARTI debe funcionar con:
+
+NO_FINANCING
+MANUAL_FINANCING
+PARTNER_FINANCING
+INSURED_FINANCING
+
+============================================================
+68. FINANCIAL PARTNER LAYER
+============================================================
+
+Crear:
+
+Financial Integration Layer
+
+Con adapters para:
+
+Bank
+Factoring Provider
+Insurance Provider
+Payment Provider
+
+No hardcodear instituciones.
+
+============================================================
+69. FACTORING FLOW
+============================================================
+
+Ejemplo:
+
+Enterprise books:
+US$10,000
+
+Payment terms:
+NET 90
+
+Event completed.
+
+Invoice accepted.
+
+ARTI solicita financiación.
+
+Partner analiza:
+
+enterprise
+invoice
+risk
+credit
+
+Partner aprueba anticipo.
+
+ARTI recibe/coordina fondos conforme al acuerdo.
+
+Provider recibe payout.
+
+Enterprise paga factura al vencimiento.
+
+Partner liquida la operación.
+
+Registrar absolutamente todas las transacciones.
+
+============================================================
+70. FAST PAY
+============================================================
+
+Después de completar un evento:
+
+Provider sees:
+
+Gross:
+US$500
+
+Standard settlement:
+US$500 on Nov 15
+
+Fast Pay:
+Receive US$490 today
+
+Fee:
+US$10
+
+[GET PAID NOW]
+
+============================================================
+71. CASH FLOW TRANSPARENCY
+============================================================
+
+Cada participante debe entender su dinero.
+
+ARTIST:
+
+Event:
+US$500
+
+Platform fee:
+-US$20
+
+Fast Pay fee:
+-US$10
+
+Net:
+US$470
+
+LEADER:
+
+Commission:
+US$50
+
+AGENCY:
+
+Commission:
+US$30
+
+ARTI:
+
+Revenue:
+US$50
+
+Toda la distribución debe ser transparente.
+
+============================================================
+72. ENTERPRISE FINANCE
+============================================================
+
+Dashboard empresarial:
+
+Credit Limit
+Credit Used
+Available Credit
+Outstanding
+Due Soon
+Overdue
+Financed
+Payments
+Bookings
+Upcoming Spend
+
+============================================================
+73. ARTIST FINANCE
+============================================================
+
+Dashboard:
+
+Pending
+Available
+Paid
+Fast Pay
+Upcoming Earnings
+Invoices
+History
+
+============================================================
+74. LEADER DASHBOARD
+============================================================
+
+Mostrar:
+
+Team
+Upcoming Events
+Open Opportunities
+Accepted Series
+Negotiations
+Member Availability
+Substitutions
+Team Revenue
+Member Payouts
+Commission
+Calendar
+
+============================================================
+75. EVENT COMMAND CENTER
+============================================================
+
+Para eventos grandes:
+
+EVENT COMMAND CENTER
+
+Mostrar:
+
+Event status
+Artists
+Leader
+Venue
+Call time
+Setup
+Arrival
+Equipment
+Documents
+Payments
+Evidence
+Issues
+
+============================================================
+76. MULTI-EVENT ENTERPRISE COMMAND CENTER
+============================================================
+
+Una empresa que tiene 100 eventos debe poder ver:
+
+TODAY
+THIS WEEK
+THIS MONTH
+UPCOMING
+COMPLETED
+CANCELLED
+LATE
+DISPUTED
+
+y filtrar por:
+
+venue
+artist
+leader
+agency
+category
+date
+status
+
+============================================================
+77. MASS BOOKING
+============================================================
+
+Permitir crear:
+
+100 bookings
+
+a partir de una plantilla.
+
+Ejemplo:
+
+Hotel ABC
+every Friday
+3 months
+DJ
+US$250
+
+ARTI genera automáticamente las 13 fechas.
+
+Luego:
+
+Artists apply or are invited.
+
+============================================================
+78. REPLACEMENTS
+============================================================
+
+Cuando un artista cancela:
+
+REPLACEMENT MODE
+
+El sistema muestra:
+
+Available artists
+Price
+Distance
+Availability
+Rating
+Punctuality
+Experience
+
+y permite enviarles la oportunidad inmediatamente.
+
+============================================================
+79. MARKETPLACE LIQUIDITY
+============================================================
+
+Diseñar ARTI para que la oferta y demanda crezcan juntas.
+
+Los artistas deben poder:
+
+mostrar disponibilidad
+
+Las empresas:
+
+mostrar demanda
+
+Los líderes:
+
+agrupar oferta
+
+Las agencias:
+
+intermediar
+
+ARTI:
+
+orquestar.
+
+============================================================
+80. ADMINISTRATION
+============================================================
+
+Admin Console debe permitir:
+
+users
+profiles
+media
+opportunities
+bookings
+negotiations
+events
+venues
+credit
+financing
+insurance
+payments
+payouts
+disputes
+penalties
+evidence
+fraud
+analytics
+
+============================================================
+81. ANALYTICS
+============================================================
+
+Medir:
+
+GMV
+Bookings
+Active Artists
+Active Enterprises
+Opportunity Conversion
+Offer Acceptance
+Negotiation Success
+Event Completion
+Late Rate
+No-show Rate
+Cancellation Rate
+Average Price
+Average Booking Value
+Enterprise Retention
+Artist Retention
+Fast Pay Adoption
+Credit Utilization
+Outstanding Receivables
+Financed Volume
+
+============================================================
+82. SEARCH / MATCHING ENGINE
+============================================================
+
+Crear matching entre:
+
+opportunity
+artist
+leader
+agency
+
+Variables:
+
+skills
+genre
+location
+distance
+price
+availability
+experience
+reputation
+punctuality
+response rate
+enterprise requirements
+
+============================================================
+83. SMART RECOMMENDATION
+============================================================
+
+Cuando una empresa publique:
+
+"DJ, Punta Cana, viernes, US$250"
+
+ARTI puede recomendar:
+
+- artistas disponibles
+- líderes
+- agencias
+
+y explicar:
+
+"Matching 94%"
+
+============================================================
+84. API
+============================================================
+
+Crear arquitectura API modular.
+
+Módulos:
+
+/auth
+/users
+/profiles
+/media
+/posts
+/feed
+/opportunities
+/offers
+/negotiations
+/availability
+/bookings
+/events
+/checkins
+/evidence
+/teams
+/leaders
+/agencies
+/enterprises
+/invoices
+/payments
+/payouts
+/settlements
+/credit
+/financing
+/insurance
+/fast-pay
+/disputes
+/penalties
+/analytics
+/notifications
+/messages
+
+============================================================
+85. DATABASE
+============================================================
+
+Crear como mínimo:
+
+User
+Organization
+Enterprise
+Venue
+Profile
+ArtistProfile
+LeaderProfile
+Agency
+Team
+TeamMember
+Post
+PostMedia
+MediaAsset
+Opportunity
+OpportunityDate
+Offer
+CounterOffer
+Negotiation
+Availability
+DateHold
+Booking
+EventSeries
+Event
+EventParticipant
+CheckIn
+Geofence
+Evidence
+SetupVerification
+Penalty
+ReplacementRequest
+Invoice
+InvoiceLine
+Payment
+Payout
+Settlement
+CreditProfile
+CreditLimit
+CreditDecision
+CreditScore
+FinancingApplication
+FinancingOffer
+FinancingProvider
+InsurancePolicy
+InsuranceProvider
+FastPayQuote
+Dispute
+Claim
+LedgerAccount
+LedgerEntry
+Contract
+Document
+Conversation
+Message
+Notification
+AuditLog
+
+============================================================
+86. MEDIA DATA MODEL
+============================================================
+
+No guardar archivos dentro de SQL.
+
+Guardar:
+
+media_id
+owner_id
+storage_provider
+bucket
+storage_key
+cdn_url
+thumbnail_url
+mime_type
+size
+duration
+width
+height
+processing_status
+visibility
+checksum
+created_at
+
+============================================================
+87. CLOUD STORAGE
+============================================================
+
+Diseñar una abstracción:
+
+MediaStorageProvider
+
+Implementaciones posibles:
+
+S3
+Cloudflare R2
+Google Cloud Storage
+Azure Blob
+
+La aplicación no debe depender de uno solo.
+
+Crear CDN delante del storage.
+
+Para vídeo, usar procesamiento/transcoding.
+
+El almacenamiento debe separar:
+
+ORIGINAL
+PROCESSED
+THUMBNAILS
+PREVIEWS
+
+============================================================
+88. SECURITY
+============================================================
+
+Implementar:
+
+RBAC
+MFA
+encryption
+audit logs
+signed URLs
+private media access
+rate limiting
+secure uploads
+virus scanning
+webhook signing
+idempotency
+fraud controls
+device security
+session management
+
+============================================================
+89. PAYMENTS
+============================================================
+
+No permitir que el cliente modifique directamente saldos.
+
+Todo movimiento:
+
+transaction
+
+Todo dinero:
+
+ledger entry.
+
+============================================================
+90. COMPLIANCE
+============================================================
+
+ARTI no debe asumir automáticamente que puede:
+
+- captar depósitos
+- prestar dinero
+- emitir seguros
+- cobrar intereses
+- operar como entidad financiera
+
+Diseñar arquitectura para integrarse con entidades reguladas.
+
+Consultar requisitos legales aplicables antes de activar cualquier producto financiero.
+
+============================================================
+91. MVP — FASE 1
+============================================================
+
+Construir inicialmente:
+
+Authentication
+
+Profiles
+
+Artist profiles
+
+Media upload
+
+Posts
+
+Feed
+
+Opportunities
+
+Offers
+
+Counteroffers
+
+Availability Calendar
+
+Date Holds
+
+Bookings
+
+Events
+
+Check-in
+
+GPS
+
+Evidence
+
+Setup Verification
+
+Leader Teams
+
+Enterprise Accounts
+
+Basic Invoices
+
+Payments
+
+Payouts
+
+Admin
+
+============================================================
+92. MVP — FASE 2
+============================================================
+
+Agregar:
+
+Enterprise subscriptions
+
+Mass booking
+
+Event series
+
+Recurring contracts
+
+Residencies
+
+Replacement marketplace
+
+Reputation
+
+Punctuality Score
+
+Penalty Engine
+
+Advanced Analytics
+
+============================================================
+93. MVP — FASE 3
+============================================================
+
+Agregar:
+
+ARTI Credit
+
+Fast Pay
+
+Factoring
+
+Insurance
+
+Financial partner integrations
+
+Risk Engine
+
+Enterprise credit lines
+
+============================================================
+94. USER JOURNEY — ARTIST
+============================================================
+
+REGISTER
+↓
+CREATE PROFILE
+↓
+UPLOAD PHOTOS
+↓
+UPLOAD VIDEOS
+↓
+SET PRICE FROM
+↓
+SET AVAILABILITY
+↓
+VERIFY PROFILE
+↓
+DISCOVER OPPORTUNITIES
+↓
+VIEW DETAILS
+↓
+ACCEPT / NEGOTIATE / DECLINE
+↓
+DATE HOLD
+↓
+BOOKING CONFIRMED
+↓
+EVENT REMINDER
+↓
+ARRIVE 1 HOUR EARLY
+↓
+GPS CHECK-IN
+↓
+SETUP
+↓
+UPLOAD SETUP EVIDENCE
+↓
+EVENT
+↓
+COMPLETE
+↓
+PAYMENT
+↓
+FAST PAY
+↓
+REPUTATION UPDATE
+
+============================================================
+95. USER JOURNEY — ENTERPRISE
+============================================================
+
+REGISTER
+↓
+VERIFY COMPANY
+↓
+CREATE VENUES
+↓
+REQUEST CREDIT
+↓
+CREATE OPPORTUNITY
+↓
+SELECT ARTISTS / LEADERS / AGENCIES
+↓
+NEGOTIATE
+↓
+CONFIRM
+↓
+EVENT
+↓
+VERIFY SERVICE
+↓
+INVOICE
+↓
+NET 30/60/90
+↓
+PAY
+↓
+SETTLEMENT
+
+============================================================
+96. USER JOURNEY — LEADER
+============================================================
+
+CREATE PROFILE
+↓
+CREATE TEAM
+↓
+ADD MEMBERS
+↓
+SET MEMBER AVAILABILITY
+↓
+RECEIVE OPPORTUNITY
+↓
+NEGOTIATE
+↓
+ACCEPT SERIES
+↓
+ASSIGN MEMBERS
+↓
+MONITOR EVENTS
+↓
+HANDLE SUBSTITUTIONS
+↓
+CONFIRM COMPLETION
+↓
+RECEIVE SETTLEMENT
+↓
+PAY MEMBERS
+
+============================================================
+97. USER JOURNEY — AGENCY / INTERMEDIARY
+============================================================
+
+CREATE ORGANIZATION
+↓
+VERIFY
+↓
+RECEIVE ENTERPRISE OPPORTUNITIES
+↓
+NEGOTIATE
+↓
+BUILD TALENT POOL
+↓
+PROPOSE ARTISTS
+↓
+BOOK
+↓
+MANAGE EVENTS
+↓
+RECEIVE COMMISSION
+↓
+SETTLE PROVIDERS
+
+============================================================
+98. EXACT INTERACTION MODEL
+============================================================
+
+ARTI debe funcionar como una mezcla conceptual de:
+
+Professional Social Network
++
+Marketplace
++
+Booking System
++
+Negotiation System
++
+Enterprise Workforce Platform
+
+Pero el producto debe conservar identidad propia.
+
+============================================================
+99. UX PRINCIPLE
+============================================================
+
+La interfaz para un artista debe sentirse:
+
+rápida
+visual
+simple
+social
+profesional
+
+La interfaz empresarial:
+
+estructurada
+financiera
+operativa
+administrativa
+
+La interfaz del líder:
+
+orientada a equipos
+fechas
+eventos
+asignaciones
+negociaciones
+
+============================================================
+100. EJEMPLO COMPLETO
+============================================================
+
+HOTEL ABC publica:
+
+"Buscamos bandas para 40 eventos."
+
+Budget:
+US$1,500/event
+
+Dates:
+Every Friday and Saturday
+
+Duration:
+5 months
+
+Payment:
+NET 90
+
+ARTI muestra la oportunidad.
+
+LEADER ABC responde:
+
+"US$1,400/event
+5 musicians
+transport included"
+
+HOTEL COUNTER:
+
+"US$1,450/event"
+
+LEADER ACCEPTS.
+
+ARTI crea:
+
+40 EVENT INSTANCES.
+
+El líder asigna artistas.
+
+Cada artista ve sus fechas.
+
+24 horas antes:
+REMINDER.
+
+1 hora antes:
+CALL TIME.
+
+Cuando entra al venue:
+GPS CHECK-IN.
+
+Se solicita:
+
+SETUP PHOTO.
+
+Después del evento:
+
+COMPLETED.
+
+Se genera:
+
+INVOICE.
+
+La empresa tiene:
+
+NET 90.
+
+El proveedor puede tener:
+
+FAST PAY.
+
+ARTI puede:
+
+FINANCE THE RECEIVABLE
+
+mediante un partner autorizado.
+
+============================================================
+101. EJEMPLO DE MASA DE EVENTOS
+============================================================
+
+Empresa:
+
+"Necesitamos 50 DJs."
+
+ARTI crea:
+
+50 event slots.
+
+Cada slot:
+
+Date
+Time
+Venue
+Rate
+Requirements
+
+El sistema distribuye la oportunidad entre:
+
+Artists
+Leaders
+Agencies
+
+Los interesados pueden:
+
+Accept
+Counter
+Decline
+
+El sistema llena automáticamente los slots.
+
+============================================================
+102. EJEMPLO DE NEGOCIACIÓN
+============================================================
+
+ENTERPRISE:
+
+US$250
+4 hours
+
+ARTIST:
+
+US$300
+
+ENTERPRISE:
+
+US$275
+
+ARTIST:
+
+US$275 + transport
+
+ENTERPRISE:
+
+Accepted.
+
+ARTI genera:
+
+Agreed Price:
+US$275
+
+Transport:
+Included
+
+Contract:
+Confirmed.
+
+============================================================
+103. EVENT VERIFICATION
+============================================================
+
+Para evitar fraudes:
+
+Evento:
+
+20:00
+
+Call:
+
+19:00
+
+ARTI:
+
+18:45
+"Be ready in 15 minutes."
+
+19:00:
+GPS CHECK-IN
+
+19:10:
+SETUP PHOTO
+
+19:30:
+SETUP VERIFIED
+
+20:00:
+EVENT STARTED
+
+00:00:
+EVENT COMPLETED
+
+Todo queda registrado.
+
+============================================================
+104. AUDIT TRAIL
+============================================================
+
+Registrar:
+
+who
+what
+when
+where
+device
+booking
+event
+transaction
+
+para:
+
+offers
+negotiations
+check-ins
+payments
+payouts
+contracts
+disputes
+evidence
+penalties
+
+============================================================
+105. ADMIN AUTOMATION
+============================================================
+
+Crear reglas configurables:
+
+late_threshold
+no_show_threshold
+setup_deadline
+checkin_radius
+negotiation_round_limit
+date_hold_duration
+fast_pay_fee
+commission_rules
+credit_rules
+penalty_rules
+
+Nunca hardcodear.
+
+============================================================
+106. INTERNACIONALIZACIÓN
+============================================================
+
+Preparar:
+
+DOP
+USD
+EUR
+
+y múltiples países.
+
+Cada oportunidad debe tener:
+
+country
+timezone
+currency
+locale
+
+Los eventos deben utilizar timezone local del venue.
+
+============================================================
+107. SCALABILITY
+============================================================
+
+Arquitectura preparada para:
+
+10,000 users
+
+100,000 users
+
+1,000,000 users
+
+Media-heavy workloads.
+
+Separar:
+
+core API
+media service
+notifications
+payments
+search
+analytics
+background jobs
+
+============================================================
+108. QUEUES
+============================================================
+
+Utilizar background jobs para:
+
+video processing
+notifications
+emails
+payment reconciliation
+invoice generation
+risk calculations
+analytics
+geofence processing
+
+============================================================
+109. SEARCH ENGINE
+============================================================
+
+Preparar arquitectura para:
+
+PostgreSQL search inicialmente
+
+y poder evolucionar posteriormente hacia:
+
+Elasticsearch
+OpenSearch
+Meilisearch
+Algolia
+
+sin rediseñar la aplicación.
+
+============================================================
+110. INFRAESTRUCTURA DE MEDIA
+============================================================
+
+La plataforma debe tratar los videos como una red social real.
+
+No servir directamente archivos gigantes desde el backend.
+
+Arquitectura:
+
+Mobile/Web
+↓
+Signed Upload URL
+↓
+Object Storage
+↓
+Processing Worker
+↓
+Transcoded Video
+↓
+CDN
+↓
+Playback
+
+La base de datos solamente almacena metadatos.
+
+============================================================
+111. PERFORMANCE
+============================================================
+
+El feed debe utilizar:
+
+pagination
+cursor pagination
+lazy loading
+thumbnail optimization
+video preview optimization
+CDN caching
+
+============================================================
+112. MODERACIÓN
+============================================================
+
+Crear:
+
+Content Moderation.
+
+Permitir:
+
+report
+review
+remove
+restrict
+suspend
+
+Aplicar moderación a:
+
+posts
+videos
+photos
+profiles
+messages cuando legalmente corresponda
+
+============================================================
+113. BUSINESS MODEL
+============================================================
+
+ARTI puede monetizar mediante:
+
+Marketplace Commission
+
+Enterprise Subscription
+
+Booking Commission
+
+Production Margin
+
+Leader / Agency tools
+
+Premium Profiles
+
+Fast Pay fee
+
+Payment processing fee
+
+Enterprise Management Fee
+
+API fees
+
+Analytics
+
+Financing-related platform fees cuando legalmente corresponda
+
+IMPORTANTE:
+
+separar completamente:
+
+ARTI revenue
+Partner revenue
+Provider payout
+Financing cost
+Insurance cost
+Taxes
+
+============================================================
+114. PRINCIPIO FUNDAMENTAL DE ARTI
+============================================================
+
+ARTI no debe obligar al artista a aceptar una oferta.
+
+ARTI tampoco debe obligar a la empresa a aceptar la tarifa del artista.
+
+ARTI facilita:
+
+DISCOVERY
+NEGOTIATION
+BOOKING
+VERIFICATION
+PAYMENT
+REPUTATION
+FINANCING
+
+La decisión comercial pertenece a las partes.
+
+============================================================
+115. PRINCIPIO DE CONFIANZA
+============================================================
+
+Cada operación debe poder responder:
+
+¿Quién contrató?
+
+¿A quién?
+
+¿Para qué evento?
+
+¿En qué fecha?
+
+¿A qué precio?
+
+¿Quién negoció?
+
+¿Quién aceptó?
+
+¿Quién llegó?
+
+¿A qué hora?
+
+¿Dónde estaba?
+
+¿Hizo setup?
+
+¿Se realizó el evento?
+
+¿Cuánto se facturó?
+
+¿Cuánto recibió cada persona?
+
+¿Cuándo se pagó?
+
+¿Hubo financiación?
+
+¿Hubo seguro?
+
+¿Hubo disputa?
+
+============================================================
+116. OBJETIVO ESTRATÉGICO FINAL
+============================================================
+
+Construir ARTI como:
+
+"la infraestructura profesional para descubrir, contratar, coordinar, verificar y pagar talento y producción para eventos."
+
+Desde un músico independiente hasta una cadena hotelera.
+
+Desde un evento individual hasta miles de eventos.
+
+Desde:
+
+ARTIST ↔ COMPANY
+
+hasta:
+
+ENTERPRISE
+↔ AGENCY
+↔ LEADER
+↔ TEAM
+↔ ARTIST
+
+y con infraestructura financiera:
+
+ENTERPRISE
+→ INVOICE
+→ CREDIT
+→ FACTORING / INSURANCE
+→ ARTI
+→ PROVIDERS
+
+============================================================
+117. ENTREGABLES
+============================================================
+
+ANTES DE ESCRIBIR CÓDIGO, producir:
+
+A. Product Architecture
+B. Business Model
+C. User Roles
+D. User Journeys
+E. Marketplace Flow
+F. Social Flow
+G. Enterprise Flow
+H. Leader Flow
+I. Negotiation Flow
+J. Booking Flow
+K. Event Verification Flow
+L. Credit Flow
+M. Factoring Flow
+N. Insurance Flow
+O. Payment Flow
+P. Media Architecture
+Q. Cloud Storage Architecture
+R. Database Schema
+S. ERD
+T. API Architecture
+U. Security Architecture
+V. Fraud Architecture
+W. Penalty Engine
+X. Reputation Engine
+Y. Matching Engine
+Z. Analytics Architecture
+
+DESPUÉS:
+
+Generar código modular por módulos.
+
+============================================================
+118. PRINCIPIOS DE IMPLEMENTACIÓN
+============================================================
+
+NO hardcodear:
+
+banks
+insurance providers
+fees
+commission percentages
+currency conversion
+penalties
+credit limits
+storage providers
+
+Utilizar:
+
+environment variables
+configuration tables
+feature flags
+provider adapters
+interfaces
+dependency injection
+
+============================================================
+119. REQUISITO FINAL
+============================================================
+
+La plataforma debe poder comenzar como:
+
+SOCIAL + MARKETPLACE + BOOKING
+
+y evolucionar progresivamente hacia:
+
+ENTERPRISE + LEADERS + AGENCIES + MASS EVENTS + CREDIT + FACTORING + INSURANCE + FAST PAY.
+
+No construir la complejidad financiera antes de tener una base sólida de:
+
+identidad
+talento
+demanda
+booking
+evidencia
+facturación
+pagos
+reputación.
+
+Pero la arquitectura debe estar preparada desde el inicio para integrar esa capa posteriormente.
+
+============================================================
+120. DEFINICIÓN FINAL DEL PRODUCTO
+============================================================
+
+ARTI =
+
+SOCIAL NETWORK
++
+TALENT DISCOVERY
++
+EVENT MARKETPLACE
++
+ENTERPRISE STAFFING
++
+LEADER NETWORK
++
+AGENCY NETWORK
++
+NEGOTIATION
++
+BOOKING
++
+AVAILABILITY
++
+EVENT VERIFICATION
++
+PAYMENTS
++
+CREDIT
++
+FACTORING
++
+INSURANCE
++
+FAST PAY
++
+REPUTATION
+
+ARTI debe convertirse en la infraestructura que conecta la demanda empresarial de entretenimiento con la oferta profesional de talento, permitiendo contratación individual, equipos, intermediarios y grandes volúmenes de eventos, con negociación flexible, reserva de fechas, verificación operacional, reputación y una capa financiera conectable a terceros autorizados.
